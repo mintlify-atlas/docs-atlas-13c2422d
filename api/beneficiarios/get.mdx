@@ -1,0 +1,93 @@
+---
+title: "Get Beneficiario"
+description: "Retrieve a specific beneficiario by ID"
+---
+
+Retrieves details of a specific beneficiario by their ID.
+
+## Endpoint
+
+```bash
+GET /beneficiarios/:id
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  The unique identifier of the beneficiario
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="number">
+  Unique identifier for the beneficiario
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Full name of the beneficiario
+</ResponseField>
+
+<ResponseField name="fechaIngreso" type="string">
+  Date of entry
+</ResponseField>
+
+<ResponseField name="tiempoAsignado" type="number">
+  Assigned time amount
+</ResponseField>
+
+<ResponseField name="unidadTiempo" type="string">
+  Time unit (HORAS or MESES)
+</ResponseField>
+
+<ResponseField name="creadoEn" type="string">
+  Timestamp when record was created
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:3000/beneficiarios/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "nombre": "Juan Pérez García",
+  "fechaIngreso": "2026-03-01",
+  "tiempoAsignado": 6,
+  "unidadTiempo": "MESES",
+  "creadoEn": "2026-03-01T10:00:00.000Z"
+}
+```
+
+## Error Responses
+
+### Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Beneficiario not found"
+}
+```
+
+### Invalid ID
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed (numeric string is expected)",
+  "error": "Bad Request"
+}
+```

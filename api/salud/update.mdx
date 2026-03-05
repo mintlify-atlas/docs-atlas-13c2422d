@@ -1,0 +1,156 @@
+---
+title: "Update Salud Profile"
+description: "Update an existing health profile"
+---
+
+Updates one or more fields of an existing health profile.
+
+## Endpoint
+
+```bash
+PATCH /salud/:id
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  The unique identifier of the health profile to update
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include fields you want to update.
+
+<ParamField path="esAptoFisico" type="boolean">
+  Whether the beneficiario is physically fit
+</ParamField>
+
+<ParamField path="padecEnfermedad" type="boolean">
+  Whether the beneficiario has a medical condition
+</ParamField>
+
+<ParamField path="nombreEnfermedad" type="string">
+  Name of the medical condition
+</ParamField>
+
+<ParamField path="consumeSustancias" type="boolean">
+  Whether the beneficiario consumes substances
+</ParamField>
+
+<ParamField path="tipoSustancias" type="string">
+  Type of substances consumed
+</ParamField>
+
+<ParamField path="afiliadoServicioSalud" type="string">
+  Health service affiliation
+</ParamField>
+
+<ParamField path="necesitaLentes" type="boolean">
+  Whether the beneficiario needs glasses
+</ParamField>
+
+<ParamField path="observacionesMedicas" type="string">
+  Additional medical observations
+</ParamField>
+
+## Response
+
+Returns the updated health profile object.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the health profile
+</ResponseField>
+
+<ResponseField name="beneficiarioId" type="number">
+  ID of the associated beneficiario
+</ResponseField>
+
+<ResponseField name="esAptoFisico" type="boolean">
+  Physical fitness status
+</ResponseField>
+
+<ResponseField name="padecEnfermedad" type="boolean">
+  Medical condition status
+</ResponseField>
+
+<ResponseField name="nombreEnfermedad" type="string">
+  Name of medical condition
+</ResponseField>
+
+<ResponseField name="consumeSustancias" type="boolean">
+  Substance consumption status
+</ResponseField>
+
+<ResponseField name="tipoSustancias" type="string">
+  Type of substances
+</ResponseField>
+
+<ResponseField name="afiliadoServicioSalud" type="string">
+  Health service affiliation
+</ResponseField>
+
+<ResponseField name="necesitaLentes" type="boolean">
+  Glasses requirement
+</ResponseField>
+
+<ResponseField name="observacionesMedicas" type="string">
+  Medical observations
+</ResponseField>
+
+<ResponseField name="fechaActualizacion" type="string">
+  Last update timestamp (automatically updated)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PATCH http://localhost:3000/salud/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "padecEnfermedad": true,
+    "nombreEnfermedad": "Hipertensión",
+    "observacionesMedicas": "Requiere monitoreo de presión arterial"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "beneficiarioId": 1,
+  "esAptoFisico": true,
+  "padecEnfermedad": true,
+  "nombreEnfermedad": "Hipertensión",
+  "consumeSustancias": false,
+  "tipoSustancias": null,
+  "afiliadoServicioSalud": "IMSS",
+  "necesitaLentes": false,
+  "observacionesMedicas": "Requiere monitoreo de presión arterial",
+  "fechaActualizacion": "2026-03-05T15:45:00.000Z"
+}
+```
+
+## Error Responses
+
+### Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Health profile not found"
+}
+```
+
+<Note>
+  The `fechaActualizacion` field is automatically updated whenever the health profile is modified.
+</Note>

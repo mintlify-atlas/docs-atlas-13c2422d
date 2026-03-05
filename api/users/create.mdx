@@ -1,0 +1,103 @@
+---
+title: "Create User"
+description: "Create a new user account"
+---
+
+Creates a new user with the specified role and credentials.
+
+## Endpoint
+
+```bash
+POST /users
+```
+
+## Authentication
+
+This endpoint requires JWT authentication and **Admin** role.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Request Body
+
+<ParamField path="nombre" type="string" required>
+  Full name of the user
+</ParamField>
+
+<ParamField path="rol" type="string" required>
+  User role. Must be one of:
+  - `Admin`
+  - `Psicologo`
+  - `TrabajoSocial`
+  - `Guia`
+</ParamField>
+
+<ParamField path="nomUsuario" type="string" required>
+  Username for login (must be unique)
+</ParamField>
+
+<ParamField path="contrasena" type="string" required>
+  Password (minimum 6 characters)
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="number">
+  Unique identifier for the user
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Full name of the user
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role
+</ResponseField>
+
+<ResponseField name="nomUsuario" type="string">
+  Username
+</ResponseField>
+
+<ResponseField name="estatus" type="boolean">
+  User active status (default: true)
+</ResponseField>
+
+<ResponseField name="creadoEn" type="string">
+  Timestamp when user was created
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:3000/users \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "María García",
+    "rol": "Psicologo",
+    "nomUsuario": "mgarcia",
+    "contrasena": "secure123"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 5,
+  "nombre": "María García",
+  "rol": "Psicologo",
+  "nomUsuario": "mgarcia",
+  "estatus": true,
+  "creadoEn": "2026-03-05T10:30:00.000Z"
+}
+```
+
+<Note>
+  The password is hashed before storage and will not be returned in the response.
+</Note>
+
+<Warning>
+  Only users with Admin role can create new users.
+</Warning>

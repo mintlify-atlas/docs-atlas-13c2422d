@@ -1,0 +1,122 @@
+---
+title: "Error Handling"
+description: "Understanding API error responses and status codes"
+---
+
+The SSP Backend API uses standard HTTP status codes to indicate the success or failure of requests.
+
+## HTTP Status Codes
+
+### Success Codes
+
+<ResponseField name="200 OK" type="success">
+  Request succeeded. The response body contains the requested data.
+</ResponseField>
+
+<ResponseField name="201 Created" type="success">
+  Resource successfully created. The response body contains the new resource.
+</ResponseField>
+
+### Client Error Codes
+
+<ResponseField name="400 Bad Request" type="error">
+  The request was invalid or contained malformed data. Check validation errors in the response.
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="error">
+  Authentication failed or JWT token is missing/invalid.
+</ResponseField>
+
+<ResponseField name="403 Forbidden" type="error">
+  The authenticated user does not have permission to access this resource.
+</ResponseField>
+
+<ResponseField name="404 Not Found" type="error">
+  The requested resource was not found.
+</ResponseField>
+
+### Server Error Codes
+
+<ResponseField name="500 Internal Server Error" type="error">
+  An unexpected error occurred on the server.
+</ResponseField>
+
+## Error Response Format
+
+Error responses follow this structure:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request"
+}
+```
+
+## Validation Errors
+
+When validation fails (400 Bad Request), the response includes detailed error messages:
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "El nombre es obligatorio",
+    "El tiempo asignado debe ser mayor a 0"
+  ],
+  "error": "Bad Request"
+}
+```
+
+## Authentication Errors
+
+### Missing Token
+
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+### Invalid Token
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid token"
+}
+```
+
+## Authorization Errors
+
+When a user lacks the required role:
+
+```json
+{
+  "statusCode": 403,
+  "message": "Forbidden resource"
+}
+```
+
+## Not Found Errors
+
+When a resource doesn't exist:
+
+```json
+{
+  "statusCode": 404,
+  "message": "Beneficiario not found"
+}
+```
+
+## Common Validation Rules
+
+<Note>
+  All string fields are validated for type and required fields must not be empty.
+</Note>
+
+- **Minimum length**: Some fields like `contrasena` require at least 6 characters
+- **Enum values**: Category and role fields must match predefined enum values
+- **Numeric fields**: Must be valid integers and meet minimum value requirements
+- **Boolean fields**: Must be valid boolean values (true/false)

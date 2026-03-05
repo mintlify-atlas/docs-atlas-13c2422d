@@ -1,0 +1,650 @@
+---
+title: Environment Variables
+description: Complete reference of all environment variables and configuration options for the SSP Backend API
+---
+
+# Environment Variables
+
+The SSP Backend API uses environment variables for configuration. This guide provides a complete reference of all available variables and their usage.
+
+## Environment File Setup
+
+Create a `.env` file in the project root:
+
+```bash
+touch .env
+```
+
+<Warning>
+  **Security**: Never commit `.env` files to version control. Ensure `.env` is listed in your `.gitignore` file.
+</Warning>
+
+## Complete Configuration Template
+
+Here's a complete `.env` template with all available variables:
+
+```bash
+# ========================================
+# Database Configuration
+# ========================================
+
+# PostgreSQL host (default: localhost)
+DB_HOST=localhost
+
+# PostgreSQL port (default: 5432)
+DB_PORT=5432
+
+# Database username
+DB_USERNAME=ssp_user
+
+# Database password
+DB_PASSWORD=your_secure_password
+
+# Database name
+DB_NAME=ssp_db
+
+# ========================================
+# JWT Authentication
+# ========================================
+
+# Secret key for signing JWT tokens
+# MUST be changed in production (minimum 32 characters)
+JWT_SECRET=your_jwt_secret_key_minimum_32_characters_long
+
+# JWT token expiration time
+# Examples: 1h, 12h, 1d, 7d, 30d
+JWT_EXPIRES_IN=1d
+
+# ========================================
+# Server Configuration
+# ========================================
+
+# Server port (default: 3000)
+PORT=3000
+
+# ========================================
+# Seeding Configuration
+# ========================================
+
+# Initial admin password (default: Admin1234)
+SEED_ADMIN_PASSWORD=Admin1234
+```
+
+## Database Configuration
+
+PostgreSQL database connection settings.
+
+### DB_HOST
+
+**Description**: PostgreSQL server hostname or IP address
+
+**Type**: String
+
+**Default**: `localhost`
+
+**Examples**:
+
+```bash
+# Local development
+DB_HOST=localhost
+
+# Remote server
+DB_HOST=192.168.1.100
+
+# Docker container
+DB_HOST=postgres
+
+# Cloud database
+DB_HOST=mydb.postgres.database.azure.com
+```
+
+**Used in**: `src/app.module.ts:16`
+
+```typescript
+host: config.get<string>('DB_HOST'),
+```
+
+### DB_PORT
+
+**Description**: PostgreSQL server port
+
+**Type**: Number
+
+**Default**: `5432`
+
+**Examples**:
+
+```bash
+# Standard PostgreSQL port
+DB_PORT=5432
+
+# Custom port
+DB_PORT=5433
+```
+
+**Used in**: `src/app.module.ts:17`
+
+```typescript
+port: Number(config.get<string>('DB_PORT')),
+```
+
+### DB_USERNAME
+
+**Description**: PostgreSQL username for authentication
+
+**Type**: String
+
+**Required**: Yes
+
+**Examples**:
+
+```bash
+# Standard PostgreSQL user
+DB_USERNAME=postgres
+
+# Custom user
+DB_USERNAME=ssp_user
+
+# Cloud database user
+DB_USERNAME=admin@mydbserver
+```
+
+**Used in**: `src/app.module.ts:18`
+
+```typescript
+username: config.get<string>('DB_USERNAME'),
+```
+
+### DB_PASSWORD
+
+**Description**: PostgreSQL password for authentication
+
+**Type**: String
+
+**Required**: Yes
+
+**Security**:
+
+<Warning>
+  - Use strong passwords in production (minimum 16 characters)
+  - Include uppercase, lowercase, numbers, and special characters
+  - Never commit passwords to version control
+  - Rotate passwords regularly
+</Warning>
+
+**Examples**:
+
+```bash
+# Development
+DB_PASSWORD=devpassword123
+
+# Production (use strong passwords)
+DB_PASSWORD=Xy9$mK2#pL8@vN4&qR6*
+```
+
+**Used in**: `src/app.module.ts:19`
+
+```typescript
+password: config.get<string>('DB_PASSWORD'),
+```
+
+### DB_NAME
+
+**Description**: PostgreSQL database name
+
+**Type**: String
+
+**Required**: Yes
+
+**Examples**:
+
+```bash
+# Development
+DB_NAME=ssp_db_dev
+
+# Staging
+DB_NAME=ssp_db_staging
+
+# Production
+DB_NAME=ssp_db
+```
+
+**Used in**: `src/app.module.ts:20`
+
+```typescript
+database: config.get<string>('DB_NAME'),
+```
+
+## JWT Configuration
+
+JSON Web Token authentication settings.
+
+### JWT_SECRET
+
+**Description**: Secret key used to sign and verify JWT tokens
+
+**Type**: String
+
+**Required**: Yes (falls back to insecure default)
+
+**Default**: `'dev_secret_change_me'` (development only)
+
+**Minimum Length**: 32 characters recommended
+
+**Security**:
+
+<Warning>
+  **CRITICAL SECURITY REQUIREMENT:**
+  - NEVER use the default secret in production
+  - Use a cryptographically secure random string
+  - Different secrets for dev/staging/production
+  - Changing the secret invalidates all existing tokens
+</Warning>
+
+**Generating Secure Secrets**:
+
+```bash
+# Using OpenSSL
+openssl rand -base64 32
+
+# Using Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# Using Python
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Examples**:
+
+```bash
+# Development (insecure, for testing only)
+JWT_SECRET=dev_secret_change_me
+
+# Production (secure random string)
+JWT_SECRET=Xy9mK2pL8vN4qR6tY7uW3zA5bC1dE8fG9hJ0kM2nP4rS6
+```
+
+**Used in**: `src/shared/auth/auth.module.ts:19-20` and `src/shared/auth/jwt.strategy.ts:11`
+
+```typescript
+const secret = config.get<string>('JWT_SECRET') ?? 'dev_secret_change_me';
+```
+
+### JWT_EXPIRES_IN
+
+**Description**: JWT token expiration time
+
+**Type**: String (time span)
+
+**Default**: `'1d'` (1 day)
+
+**Format**: Uses [ms](https://github.com/vercel/ms) format
+
+**Examples**:
+
+```bash
+# 1 hour
+JWT_EXPIRES_IN=1h
+
+# 12 hours
+JWT_EXPIRES_IN=12h
+
+# 1 day (default)
+JWT_EXPIRES_IN=1d
+
+# 7 days
+JWT_EXPIRES_IN=7d
+
+# 30 days
+JWT_EXPIRES_IN=30d
+
+# Seconds
+JWT_EXPIRES_IN=3600s
+
+# Minutes
+JWT_EXPIRES_IN=60m
+```
+
+**Considerations**:
+
+<CardGroup cols={2}>
+  <Card title="Short Expiration (1h-12h)" icon="clock">
+    **Pros**: More secure, limits token theft impact
+    
+    **Cons**: Users must login more frequently
+  </Card>
+  
+  <Card title="Medium Expiration (1d-7d)" icon="clock">
+    **Pros**: Balance of security and convenience
+    
+    **Cons**: Stolen tokens valid longer
+  </Card>
+  
+  <Card title="Long Expiration (30d+)" icon="clock">
+    **Pros**: Better user experience
+    
+    **Cons**: Security risk if token is compromised
+  </Card>
+  
+  <Card title="Recommendation" icon="shield-check">
+    **1 day (24h)** provides good balance
+    
+    Adjust based on security requirements
+  </Card>
+</CardGroup>
+
+**Used in**: `src/shared/auth/auth.module.ts:21-22`
+
+```typescript
+const expiresIn = (config.get<string>('JWT_EXPIRES_IN') ?? '1d') as StringValue;
+```
+
+## Server Configuration
+
+Application server settings.
+
+### PORT
+
+**Description**: Port number for the HTTP server
+
+**Type**: Number
+
+**Default**: `3000`
+
+**Range**: 1-65535 (recommend 3000-9999 for development)
+
+**Examples**:
+
+```bash
+# Default port
+PORT=3000
+
+# Alternative ports
+PORT=8080
+PORT=4000
+PORT=5000
+```
+
+**Used in**: `src/main.ts:8`
+
+```typescript
+await app.listen(process.env.PORT ?? 3000);
+```
+
+**Notes**:
+
+- Ports below 1024 typically require root/admin privileges
+- Ensure the port is not already in use
+- In production, typically use port 80 (HTTP) or 443 (HTTPS) behind a reverse proxy
+
+## Seeding Configuration
+
+Database seeding settings.
+
+### SEED_ADMIN_PASSWORD
+
+**Description**: Password for the initial admin user created by seed scripts
+
+**Type**: String
+
+**Default**: `'Admin1234'`
+
+**Examples**:
+
+```bash
+# Development (simple)
+SEED_ADMIN_PASSWORD=Admin1234
+
+# Production (strong)
+SEED_ADMIN_PASSWORD=SecureAdminPass123!
+```
+
+**Security**:
+
+<Warning>
+  **Important**:
+  - Change immediately after first login in production
+  - Use a strong password (minimum 12 characters)
+  - Don't use dictionary words
+  - Include uppercase, lowercase, numbers, and symbols
+</Warning>
+
+**Used in**: `src/seeds/seed-admin.ts:31` and `src/seeds/seeder.service.ts:35`
+
+```typescript
+const password = process.env.SEED_ADMIN_PASSWORD || 'Admin1234';
+```
+
+## Environment-Specific Configurations
+
+### Development Environment
+
+```bash
+# .env.development
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=devpassword
+DB_NAME=ssp_db_dev
+
+JWT_SECRET=dev_secret_for_testing_only_change_in_production
+JWT_EXPIRES_IN=7d
+
+PORT=3000
+
+SEED_ADMIN_PASSWORD=DevAdmin123
+```
+
+### Staging Environment
+
+```bash
+# .env.staging
+DB_HOST=staging-db.example.com
+DB_PORT=5432
+DB_USERNAME=ssp_staging
+DB_PASSWORD=staging_secure_password_here
+DB_NAME=ssp_db_staging
+
+JWT_SECRET=staging_secret_32_characters_minimum_length_required
+JWT_EXPIRES_IN=1d
+
+PORT=3000
+
+SEED_ADMIN_PASSWORD=StagingAdminPass456!
+```
+
+### Production Environment
+
+```bash
+# .env.production
+DB_HOST=prod-db.example.com
+DB_PORT=5432
+DB_USERNAME=ssp_prod
+DB_PASSWORD=very_strong_production_password_with_special_chars_123!
+DB_NAME=ssp_db
+
+JWT_SECRET=production_jwt_secret_must_be_very_long_and_random_generated_minimum_32_chars
+JWT_EXPIRES_IN=1d
+
+PORT=3000
+
+SEED_ADMIN_PASSWORD=VerySecureProductionAdminPassword789!
+```
+
+## Loading Environment Variables
+
+The application loads environment variables using the `@nestjs/config` package.
+
+### Configuration Module
+
+From `src/app.module.ts:10`:
+
+```typescript
+ConfigModule.forRoot({ isGlobal: true }),
+```
+
+This makes the `ConfigService` available globally in all modules.
+
+### Accessing Variables in Code
+
+Inject `ConfigService` to access environment variables:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class MyService {
+  constructor(private config: ConfigService) {
+    const dbHost = this.config.get<string>('DB_HOST');
+    const port = this.config.get<number>('PORT', 3000); // with default
+  }
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Never Commit Secrets">
+    Add `.env` to `.gitignore`:
+    
+    ```bash
+    # .gitignore
+    .env
+    .env.*
+    !.env.example
+    ```
+  </Step>
+  
+  <Step title="Provide Example Files">
+    Create `.env.example` with variable names (no values):
+    
+    ```bash
+    DB_HOST=
+    DB_PORT=
+    DB_USERNAME=
+    DB_PASSWORD=
+    DB_NAME=
+    JWT_SECRET=
+    JWT_EXPIRES_IN=
+    PORT=
+    SEED_ADMIN_PASSWORD=
+    ```
+  </Step>
+  
+  <Step title="Use Strong Secrets">
+    Generate cryptographically secure random strings for secrets:
+    
+    ```bash
+    openssl rand -base64 32
+    ```
+  </Step>
+  
+  <Step title="Environment-Specific Files">
+    Use different `.env` files for each environment:
+    
+    - `.env.development`
+    - `.env.staging`
+    - `.env.production`
+  </Step>
+  
+  <Step title="Validate Required Variables">
+    Check that all required variables are set on startup:
+    
+    ```typescript
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET must be defined');
+    }
+    ```
+  </Step>
+</Steps>
+
+## Docker Compose Configuration
+
+When using Docker Compose, you can define environment variables in `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=ssp_user
+      - DB_PASSWORD=secure_password
+      - DB_NAME=ssp_db
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=1d
+      - PORT=3000
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=ssp_user
+      - POSTGRES_PASSWORD=secure_password
+      - POSTGRES_DB=ssp_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+## Troubleshooting
+
+<Accordion title="Environment variables not loading">
+  Ensure:
+  
+  1. `.env` file is in the project root
+  2. File is named exactly `.env` (not `.env.txt`)
+  3. No spaces around `=` signs: `DB_HOST=localhost` not `DB_HOST = localhost`
+  4. Variables don't use quotes unless values contain spaces
+  5. Application is restarted after changing `.env`
+</Accordion>
+
+<Accordion title="Database connection fails">
+  Check:
+  
+  1. All `DB_*` variables are set correctly
+  2. PostgreSQL is running
+  3. Database exists: `psql -l | grep ssp_db`
+  4. User has access: `psql -U ssp_user -d ssp_db`
+  5. Network connectivity if using remote database
+</Accordion>
+
+<Accordion title="JWT token errors">
+  Verify:
+  
+  1. `JWT_SECRET` is set and at least 32 characters
+  2. `JWT_EXPIRES_IN` uses valid format (1h, 1d, etc.)
+  3. Same secret is used across all app instances
+  4. Secret hasn't changed (invalidates existing tokens)
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Configure PostgreSQL and TypeORM
+  </Card>
+  
+  <Card title="Authentication" icon="key" href="/auth/overview">
+    Understand JWT configuration and usage
+  </Card>
+  
+  <Card title="Running Locally" icon="code" href="/development/running-locally">
+    Set up your development environment
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy with environment-specific configurations
+  </Card>
+</CardGroup>

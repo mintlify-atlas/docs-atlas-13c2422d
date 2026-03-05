@@ -1,0 +1,422 @@
+---
+title: Installation
+description: Detailed installation instructions for the SSP Backend API and all dependencies
+---
+
+# Installation Guide
+
+This guide provides comprehensive installation instructions for the SSP Backend API, including all dependencies and system requirements.
+
+## System Requirements
+
+### Required Software
+
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher (comes with Node.js)
+- **PostgreSQL**: v12.0 or higher
+- **Git**: Latest version
+
+### Operating System
+
+The SSP Backend API works on:
+
+- Linux (Ubuntu 20.04+, Debian 10+, etc.)
+- macOS (10.15+)
+- Windows (with WSL2 recommended)
+
+## Installing Dependencies
+
+### 1. Install Node.js and npm
+
+<CodeGroup>
+
+```bash Ubuntu/Debian
+# Using NodeSource repository
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+```bash macOS
+# Using Homebrew
+brew install node@18
+
+# Verify installation
+node --version
+npm --version
+```
+
+```bash Windows (WSL2)
+# In WSL2 Ubuntu terminal
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+</CodeGroup>
+
+### 2. Install PostgreSQL
+
+<CodeGroup>
+
+```bash Ubuntu/Debian
+# Install PostgreSQL
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Start PostgreSQL service
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Verify installation
+psql --version
+```
+
+```bash macOS
+# Using Homebrew
+brew install postgresql@14
+
+# Start PostgreSQL service
+brew services start postgresql@14
+
+# Verify installation
+psql --version
+```
+
+```bash Windows (WSL2)
+# Install PostgreSQL in WSL2
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Start PostgreSQL
+sudo service postgresql start
+
+# Verify installation
+psql --version
+```
+
+</CodeGroup>
+
+### 3. Install Git
+
+<CodeGroup>
+
+```bash Ubuntu/Debian
+sudo apt update
+sudo apt install git
+
+# Verify installation
+git --version
+```
+
+```bash macOS
+# Git comes with Xcode Command Line Tools
+xcode-select --install
+
+# Or using Homebrew
+brew install git
+
+# Verify installation
+git --version
+```
+
+```bash Windows
+# Download from https://git-scm.com/download/win
+# Or using winget
+winget install --id Git.Git -e --source winget
+
+# Verify installation
+git --version
+```
+
+</CodeGroup>
+
+## Project Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd ssp_back
+```
+
+### 2. Install Project Dependencies
+
+Install all npm packages defined in `package.json`:
+
+```bash
+npm install
+```
+
+This installs the following key dependencies:
+
+#### Core Framework
+- `@nestjs/core` v11.0.1 - NestJS framework core
+- `@nestjs/common` v11.0.1 - Common utilities and decorators
+- `@nestjs/platform-express` v11.0.1 - Express adapter for NestJS
+
+#### Database
+- `typeorm` v0.3.28 - TypeScript ORM for PostgreSQL
+- `@nestjs/typeorm` v11.0.0 - NestJS TypeORM integration
+- `pg` v8.19.0 - PostgreSQL client for Node.js
+
+#### Authentication & Security
+- `@nestjs/jwt` v11.0.2 - JWT utilities
+- `@nestjs/passport` v11.0.5 - Passport integration
+- `passport` v0.7.0 - Authentication middleware
+- `passport-jwt` v4.0.1 - JWT strategy for Passport
+- `bcrypt` v6.0.0 - Password hashing
+
+#### Validation
+- `class-validator` v0.14.3 - Decorator-based validation
+- `class-transformer` v0.5.1 - Object transformation
+
+#### Utilities
+- `dotenv` v17.3.1 - Environment variable management
+- `reflect-metadata` v0.2.2 - Metadata reflection API
+- `rxjs` v7.8.1 - Reactive extensions
+
+<Info>
+  Development dependencies (TypeScript, Jest, ESLint, etc.) are also installed automatically.
+</Info>
+
+### 3. Configure PostgreSQL Database
+
+Create a dedicated database and user for the SSP API:
+
+```bash
+# Access PostgreSQL as postgres user
+sudo -u postgres psql
+```
+
+```sql
+-- Create database
+CREATE DATABASE ssp_db;
+
+-- Create user (optional, for better security)
+CREATE USER ssp_user WITH ENCRYPTED PASSWORD 'your_secure_password';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE ssp_db TO ssp_user;
+
+-- Exit psql
+\q
+```
+
+<Warning>
+  Use a strong password for the database user in production environments.
+</Warning>
+
+### 4. Environment Configuration
+
+Create a `.env` file in the project root:
+
+```bash
+touch .env
+```
+
+Add the following configuration:
+
+```bash
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=ssp_user
+DB_PASSWORD=your_secure_password
+DB_NAME=ssp_db
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_minimum_32_characters_long
+JWT_EXPIRES_IN=1d
+
+# Server Configuration
+PORT=3000
+
+# Seed Configuration (Optional)
+SEED_ADMIN_PASSWORD=Admin1234
+```
+
+<Warning>
+  **Security Best Practices:**
+  - Never commit `.env` files to version control
+  - Use strong, randomly generated secrets for `JWT_SECRET`
+  - Change default passwords before deploying to production
+  - Add `.env` to your `.gitignore` file
+</Warning>
+
+### 5. Build the Application
+
+Compile the TypeScript code:
+
+```bash
+npm run build
+```
+
+This creates a `dist/` directory with compiled JavaScript files.
+
+## Database Setup
+
+### Running Migrations
+
+The application is configured to run migrations automatically on startup (see `src/app.module.ts:24`):
+
+```typescript
+migrationsRun: true,
+migrations: [__dirname + '/migrations/*{.ts,.js}'],
+```
+
+Migrations will execute when you start the application for the first time.
+
+### Seeding Initial Data
+
+Create the initial admin user:
+
+```bash
+npm run seed:admin
+```
+
+This script (`src/seeds/seed-admin.ts`) creates:
+
+- **Username**: `Admin`
+- **Password**: Value from `SEED_ADMIN_PASSWORD` env var (default: `Admin1234`)
+- **Role**: Admin
+- **Name**: Admin Principal
+
+The script is idempotent - it won't create duplicate admins if one already exists.
+
+## Verification
+
+### 1. Verify Database Connection
+
+Test the database connection:
+
+```bash
+# Connect to database
+psql -U ssp_user -d ssp_db -h localhost
+
+# List tables (after migrations run)
+\dt
+
+# Exit
+\q
+```
+
+You should see tables like `usuarios`, `beneficiarios`, `actividades`, `salud_perfil_general`, etc.
+
+### 2. Start the Application
+
+Start the development server:
+
+```bash
+npm run start:dev
+```
+
+Successful startup output:
+
+```
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [NestFactory] Starting Nest application...
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] AppModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] ConfigModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] TypeOrmModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [NestApplication] Nest application successfully started
+```
+
+### 3. Test API Endpoint
+
+Test the login endpoint:
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"nomUsuario": "Admin", "contrasena": "Admin1234"}'
+```
+
+You should receive a JWT token in the response.
+
+## Additional Tools (Optional)
+
+### TypeScript Node (ts-node)
+
+Already included as a dev dependency for running TypeScript files directly:
+
+```bash
+# Run TypeScript files
+ts-node src/seeds/seed-admin.ts
+```
+
+### Database GUI Tools
+
+Consider installing a PostgreSQL GUI for easier database management:
+
+- [pgAdmin](https://www.pgadmin.org/) - Official PostgreSQL GUI
+- [DBeaver](https://dbeaver.io/) - Universal database tool
+- [TablePlus](https://tableplus.com/) - Modern database GUI (macOS/Windows)
+
+### API Testing Tools
+
+- [Postman](https://www.postman.com/) - API development platform
+- [Insomnia](https://insomnia.rest/) - REST client
+- [HTTPie](https://httpie.io/) - Command-line HTTP client
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Learn about TypeORM configuration and database schema
+  </Card>
+  
+  <Card title="Running Locally" icon="code" href="/development/running-locally">
+    Learn about development workflow and debugging
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Complete reference of all configuration options
+  </Card>
+  
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Jump to the quickstart guide
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="npm install fails">
+  Try clearing npm cache and reinstalling:
+  
+  ```bash
+  npm cache clean --force
+  rm -rf node_modules package-lock.json
+  npm install
+  ```
+</Accordion>
+
+<Accordion title="PostgreSQL connection refused">
+  Ensure PostgreSQL is running:
+  
+  ```bash
+  # Linux
+  sudo systemctl status postgresql
+  sudo systemctl start postgresql
+  
+  # macOS
+  brew services list
+  brew services start postgresql@14
+  ```
+  
+  Check that your `.env` credentials match your PostgreSQL setup.
+</Accordion>
+
+<Accordion title="TypeORM migration errors">
+  If migrations fail, check:
+  
+  1. Database exists: `psql -l | grep ssp_db`
+  2. User has permissions: `psql -U ssp_user -d ssp_db`
+  3. Environment variables are correct
+  4. Migration files exist in `src/migrations/`
+</Accordion>

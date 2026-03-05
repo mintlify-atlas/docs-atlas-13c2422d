@@ -1,0 +1,82 @@
+---
+title: "List Actividades"
+description: "Retrieve all active activities"
+---
+
+Retrieves a list of all active activities in the system.
+
+## Endpoint
+
+```bash
+GET /actividades
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Response
+
+Returns an array of active activity objects.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the activity
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Name of the activity
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Description of the activity
+</ResponseField>
+
+<ResponseField name="objetivo" type="string">
+  Objective of the activity
+</ResponseField>
+
+<ResponseField name="categoria" type="string">
+  Activity category
+</ResponseField>
+
+<ResponseField name="activo" type="boolean">
+  Whether the activity is active (always true for this endpoint)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:3000/actividades \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Limpieza de parques públicos",
+    "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+    "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+    "categoria": "TRABAJO_COMUNITARIO",
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombre": "Taller de liderazgo juvenil",
+    "descripcion": "Capacitación en habilidades de liderazgo",
+    "objetivo": "Desarrollar competencias de liderazgo comunitario",
+    "categoria": "LIDERAZGO_COMUNITARIO",
+    "activo": true
+  }
+]
+```
+
+<Note>
+  This endpoint only returns active activities. To retrieve all activities including inactive ones, use the `/actividades/todas` endpoint.
+</Note>

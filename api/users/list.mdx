@@ -1,0 +1,90 @@
+---
+title: "List Users"
+description: "Retrieve all users"
+---
+
+Retrieves a list of all users in the system.
+
+## Endpoint
+
+```bash
+GET /users
+```
+
+## Authentication
+
+This endpoint requires JWT authentication and **Admin** role.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Response
+
+Returns an array of user objects.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the user
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Full name of the user
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role (Admin, Psicologo, TrabajoSocial, Guia)
+</ResponseField>
+
+<ResponseField name="nomUsuario" type="string">
+  Username
+</ResponseField>
+
+<ResponseField name="estatus" type="boolean">
+  User active status
+</ResponseField>
+
+<ResponseField name="creadoEn" type="string">
+  Timestamp when user was created
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:3000/users \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Administrator",
+    "rol": "Admin",
+    "nomUsuario": "admin",
+    "estatus": true,
+    "creadoEn": "2026-03-01T08:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "nombre": "María García",
+    "rol": "Psicologo",
+    "nomUsuario": "mgarcia",
+    "estatus": true,
+    "creadoEn": "2026-03-02T09:15:00.000Z"
+  },
+  {
+    "id": 3,
+    "nombre": "Carlos López",
+    "rol": "TrabajoSocial",
+    "nomUsuario": "clopez",
+    "estatus": true,
+    "creadoEn": "2026-03-03T10:30:00.000Z"
+  }
+]
+```
+
+<Warning>
+  Only users with Admin role can access this endpoint.
+</Warning>

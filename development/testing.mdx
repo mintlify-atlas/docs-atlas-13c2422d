@@ -1,0 +1,620 @@
+---
+title: Testing
+description: Running unit tests and end-to-end tests for the SSP Backend API using Jest
+---
+
+# Testing
+
+The SSP Backend API uses **Jest** as its testing framework for both unit tests and end-to-end (e2e) tests. This guide covers how to write and run tests.
+
+## Testing Stack
+
+The application uses the following testing tools:
+
+- **Jest** - Testing framework
+- **@nestjs/testing** - NestJS testing utilities
+- **ts-jest** - TypeScript support for Jest
+- **supertest** - HTTP assertions for e2e tests
+
+## Test Scripts
+
+Available test commands (from `package.json:16`):
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  }
+}
+```
+
+## Running Tests
+
+### Run All Unit Tests
+
+```bash
+npm test
+```
+
+This runs all files matching `*.spec.ts` in the `src/` directory.
+
+### Watch Mode
+
+Run tests continuously as you make changes:
+
+```bash
+npm run test:watch
+```
+
+Jest will:
+
+- Watch for file changes
+- Re-run related tests automatically
+- Provide interactive menu for test filtering
+
+### Coverage Report
+
+Generate code coverage report:
+
+```bash
+npm run test:cov
+```
+
+**Output:**
+
+```
+----------------------|---------|----------|---------|---------|-------------------
+File                  | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------------|---------|----------|---------|---------|-------------------
+All files             |   85.71 |    66.67 |   83.33 |   85.71 |
+app.controller.ts     |     100 |      100 |     100 |     100 |
+app.service.ts        |     100 |      100 |     100 |     100 |
+auth.service.ts       |   75.00 |    50.00 |   75.00 |   75.00 | 18-19
+----------------------|---------|----------|---------|---------|-------------------
+```
+
+Coverage reports are saved to `coverage/` directory.
+
+### End-to-End Tests
+
+Run e2e tests:
+
+```bash
+npm run test:e2e
+```
+
+This runs tests in the `test/` directory using the e2e configuration.
+
+### Debug Tests
+
+Run tests with debugging enabled:
+
+```bash
+npm run test:debug
+```
+
+Then attach a debugger to port 9229.
+
+## Jest Configuration
+
+Jest is configured in `package.json:71`:
+
+```json
+{
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
+```
+
+### Configuration Options
+
+- **rootDir**: Tests are located in `src/` directory
+- **testRegex**: Match files ending with `.spec.ts`
+- **transform**: Use ts-jest to compile TypeScript
+- **testEnvironment**: Use Node.js environment (not browser)
+
+## Unit Tests
+
+Unit tests test individual components in isolation.
+
+### Example Unit Test
+
+From `src/app.controller.spec.ts`:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
+```
+
+### Writing Unit Tests
+
+<Steps>
+  <Step title="Import Testing Utilities">
+    ```typescript
+    import { Test, TestingModule } from '@nestjs/testing';
+    ```
+  </Step>
+  
+  <Step title="Create Test Module">
+    ```typescript
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [UsersService],
+      imports: [TypeOrmModule.forFeature([User])],
+    }).compile();
+    ```
+  </Step>
+  
+  <Step title="Get Service Instance">
+    ```typescript
+    const service = module.get<UsersService>(UsersService);
+    ```
+  </Step>
+  
+  <Step title="Write Test Cases">
+    ```typescript
+    it('should find all users', async () => {
+      const users = await service.findAll();
+      expect(users).toBeDefined();
+      expect(Array.isArray(users)).toBe(true);
+    });
+    ```
+  </Step>
+</Steps>
+
+### Testing Services
+
+Example service test:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { UsersService } from './users.service';
+import { User } from './entities/user.entity';
+
+describe('UsersService', () => {
+  let service: UsersService;
+  let mockRepository: any;
+
+  beforeEach(async () => {
+    // Mock repository
+    mockRepository = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('findAll', () => {
+    it('should return an array of users', async () => {
+      const users = [
+        { id: 1, nombre: 'Test User', rol: 'Admin' },
+      ];
+      mockRepository.find.mockResolvedValue(users);
+
+      const result = await service.findAll();
+      
+      expect(result).toEqual(users);
+      expect(mockRepository.find).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a user by id', async () => {
+      const user = { id: 1, nombre: 'Test User' };
+      mockRepository.findOne.mockResolvedValue(user);
+
+      const result = await service.findOne(1);
+      
+      expect(result).toEqual(user);
+      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+  });
+});
+```
+
+### Testing Controllers
+
+Example controller test:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+
+describe('UsersController', () => {
+  let controller: UsersController;
+  let service: UsersService;
+
+  beforeEach(async () => {
+    const mockService = {
+      findAll: jest.fn(),
+      create: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UsersController],
+      providers: [
+        {
+          provide: UsersService,
+          useValue: mockService,
+        },
+      ],
+    }).compile();
+
+    controller = module.get<UsersController>(UsersController);
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  describe('findAll', () => {
+    it('should return array of users', async () => {
+      const users = [{ id: 1, nombre: 'Test' }];
+      jest.spyOn(service, 'findAll').mockResolvedValue(users as any);
+
+      expect(await controller.findAll()).toBe(users);
+    });
+  });
+});
+```
+
+## End-to-End Tests
+
+E2E tests test the entire application flow from HTTP request to response.
+
+### E2E Configuration
+
+From `test/jest-e2e.json`:
+
+```json
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  }
+}
+```
+
+### Example E2E Test
+
+From `test/app.e2e-spec.ts`:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from './../src/app.module';
+
+describe('AppController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it('/ (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('Hello World!');
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+});
+```
+
+### Writing E2E Tests
+
+Example authentication e2e test:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from '../src/app.module';
+
+describe('Authentication (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  describe('/auth/login (POST)', () => {
+    it('should login with valid credentials', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          nomUsuario: 'Admin',
+          contrasena: 'Admin1234',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('access_token');
+          expect(res.body).toHaveProperty('user');
+          expect(res.body.user.rol).toBe('Admin');
+        });
+    });
+
+    it('should reject invalid credentials', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          nomUsuario: 'Admin',
+          contrasena: 'WrongPassword',
+        })
+        .expect(401);
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+});
+```
+
+## Mocking
+
+### Mocking Repositories
+
+```typescript
+const mockRepository = {
+  find: jest.fn(),
+  findOne: jest.fn(),
+  save: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
+
+// Use in module
+{
+  provide: getRepositoryToken(User),
+  useValue: mockRepository,
+}
+```
+
+### Mocking Services
+
+```typescript
+const mockUsersService = {
+  findAll: jest.fn().mockResolvedValue([]),
+  findOne: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({ id: 1 }),
+};
+
+// Use in module
+{
+  provide: UsersService,
+  useValue: mockUsersService,
+}
+```
+
+### Mocking ConfigService
+
+```typescript
+const mockConfigService = {
+  get: jest.fn((key: string) => {
+    const config = {
+      JWT_SECRET: 'test-secret',
+      DB_HOST: 'localhost',
+    };
+    return config[key];
+  }),
+};
+```
+
+## Test Database
+
+For integration tests, use a separate test database:
+
+```bash
+# Create test database
+psql -U postgres
+CREATE DATABASE ssp_db_test;
+GRANT ALL PRIVILEGES ON DATABASE ssp_db_test TO ssp_user;
+\q
+```
+
+Create `.env.test`:
+
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=ssp_user
+DB_PASSWORD=password
+DB_NAME=ssp_db_test
+JWT_SECRET=test_secret
+JWT_EXPIRES_IN=1d
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Test Isolation" icon="box">
+    Each test should be independent and not rely on other tests
+  </Card>
+  
+  <Card title="Use Mocks" icon="wand-magic-sparkles">
+    Mock external dependencies to isolate the code under test
+  </Card>
+  
+  <Card title="Descriptive Names" icon="file-signature">
+    Use clear, descriptive test names that explain what's being tested
+  </Card>
+  
+  <Card title="Arrange-Act-Assert" icon="list-ol">
+    Structure tests: setup (arrange), execute (act), verify (assert)
+  </Card>
+  
+  <Card title="Test Edge Cases" icon="triangle-exclamation">
+    Test error conditions, null values, and boundary conditions
+  </Card>
+  
+  <Card title="Maintain Tests" icon="wrench">
+    Keep tests up to date as code changes
+  </Card>
+</CardGroup>
+
+## Common Testing Patterns
+
+### Testing Async Operations
+
+```typescript
+it('should create a user', async () => {
+  const user = await service.create(dto);
+  expect(user).toBeDefined();
+  expect(user.id).toBeDefined();
+});
+```
+
+### Testing Exceptions
+
+```typescript
+it('should throw UnauthorizedException for invalid credentials', async () => {
+  await expect(service.login('admin', 'wrong'))
+    .rejects
+    .toThrow(UnauthorizedException);
+});
+```
+
+### Testing with Guards
+
+```typescript
+it('should deny access without valid token', () => {
+  return request(app.getHttpServer())
+    .get('/users')
+    .expect(401);
+});
+```
+
+## Troubleshooting
+
+<Accordion title="Tests timing out">
+  Increase Jest timeout:
+  
+  ```typescript
+  jest.setTimeout(10000); // 10 seconds
+  
+  // Or for specific test
+  it('slow test', async () => {
+    // ...
+  }, 10000);
+  ```
+</Accordion>
+
+<Accordion title="Database connection errors in tests">
+  Ensure test database exists and is configured:
+  
+  ```bash
+  # Create test database
+  createdb ssp_db_test
+  
+  # Set NODE_ENV=test to use .env.test
+  NODE_ENV=test npm test
+  ```
+</Accordion>
+
+<Accordion title="Module not found errors">
+  Ensure all dependencies are installed:
+  
+  ```bash
+  npm install
+  
+  # Clear Jest cache
+  npm test -- --clearCache
+  ```
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Running Locally" icon="code" href="/development/running-locally">
+    Set up your development environment
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy your application to production
+  </Card>
+  
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Configure test databases
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/overview">
+    Test your API endpoints
+  </Card>
+</CardGroup>

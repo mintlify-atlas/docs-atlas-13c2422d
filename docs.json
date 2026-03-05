@@ -1,122 +1,125 @@
 {
   "$schema": "https://mintlify.com/docs.json",
+  "name": "SSP Backend API",
   "theme": "mint",
-  "name": "Mint Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#de2850",
+    "light": "#e08cac",
+    "dark": "#de2850"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/29c481de-2859-4cec-b430-eb582a269988.jpg",
+  "logo": {
+    "light": "https://media.brand.dev/a2265058-0fff-4f5e-87e7-1eef9924084b.png",
+    "dark": "https://media.brand.dev/a2265058-0fff-4f5e-87e7-1eef9924084b.png"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/SSPEstadias/SSP-BACK"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/SSPEstadias/SSP-BACK"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "installation"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Authentication",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "auth/overview",
+              "auth/jwt-tokens",
+              "auth/roles"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/database-setup",
+              "guides/seeding",
+              "guides/environment-variables"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Development",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "development/running-locally",
+              "development/testing",
+              "development/deployment"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api/overview",
+              "api/errors"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authentication",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/auth/login"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "api/users/create",
+              "api/users/list"
+            ]
+          },
+          {
+            "group": "Beneficiarios",
+            "pages": [
+              "api/beneficiarios/create",
+              "api/beneficiarios/list",
+              "api/beneficiarios/get",
+              "api/beneficiarios/update",
+              "api/beneficiarios/delete",
+              "api/beneficiarios/filter"
+            ]
+          },
+          {
+            "group": "Actividades",
+            "pages": [
+              "api/actividades/create",
+              "api/actividades/list",
+              "api/actividades/get",
+              "api/actividades/update",
+              "api/actividades/deactivate",
+              "api/actividades/filter"
+            ]
+          },
+          {
+            "group": "Salud",
+            "pages": [
+              "api/salud/create",
+              "api/salud/list",
+              "api/salud/get",
+              "api/salud/update",
+              "api/salud/delete",
+              "api/salud/filter"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

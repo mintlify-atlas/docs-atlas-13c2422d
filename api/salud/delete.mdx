@@ -1,0 +1,70 @@
+---
+title: "Delete Salud Profile"
+description: "Delete a health profile record"
+---
+
+Deletes a health profile from the system.
+
+## Endpoint
+
+```bash
+DELETE /salud/:id
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  The unique identifier of the health profile to delete
+</ParamField>
+
+## Response
+
+Returns a success message or the deleted health profile object.
+
+## Example Request
+
+```bash
+curl -X DELETE http://localhost:3000/salud/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "message": "Health profile deleted successfully"
+}
+```
+
+## Error Responses
+
+### Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Health profile not found"
+}
+```
+
+### Invalid ID
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed (numeric string is expected)",
+  "error": "Bad Request"
+}
+```
+
+<Warning>
+  This operation cannot be undone. Make sure you want to permanently delete this health profile before proceeding.
+</Warning>

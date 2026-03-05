@@ -1,0 +1,812 @@
+---
+title: Deployment
+description: Deploy the SSP Backend API to production environments
+---
+
+# Deployment
+
+This guide covers deploying the SSP Backend API to production environments, including best practices, environment setup, and deployment strategies.
+
+## Pre-Deployment Checklist
+
+Before deploying to production, ensure:
+
+<Steps>
+  <Step title="Environment Variables">
+    All production environment variables are set with secure values:
+    
+    - Strong `JWT_SECRET` (minimum 32 characters)
+    - Secure database credentials
+    - Production database configured
+    - `SEED_ADMIN_PASSWORD` changed from default
+  </Step>
+  
+  <Step title="Database Setup">
+    Production database is ready:
+    
+    - PostgreSQL installed and configured
+    - Database created
+    - Migrations ready to run
+    - Backup strategy in place
+  </Step>
+  
+  <Step title="Security">
+    Security measures are in place:
+    
+    - HTTPS enabled (SSL/TLS certificates)
+    - Firewall configured
+    - Rate limiting configured
+    - CORS properly configured
+  </Step>
+  
+  <Step title="Code Quality">
+    Code is production-ready:
+    
+    - All tests passing
+    - No linting errors
+    - Code reviewed
+    - Dependencies updated
+  </Step>
+  
+  <Step title="Monitoring">
+    Monitoring and logging configured:
+    
+    - Application logging
+    - Error tracking
+    - Performance monitoring
+    - Uptime monitoring
+  </Step>
+</Steps>
+
+## Building for Production
+
+### Compile TypeScript
+
+Build the application:
+
+```bash
+npm run build
+```
+
+This creates optimized JavaScript files in the `dist/` directory.
+
+**Build output:**
+
+```
+✔ Built successfully
+✔ Output directory: dist
+✔ Entry point: dist/main.js
+```
+
+### Production Dependencies
+
+Install only production dependencies:
+
+```bash
+npm ci --only=production
+```
+
+This ensures dev dependencies aren't installed in production.
+
+## Environment Configuration
+
+### Production .env File
+
+Create a secure `.env` file for production:
+
+```bash
+# Database Configuration
+DB_HOST=prod-postgres.example.com
+DB_PORT=5432
+DB_USERNAME=ssp_prod_user
+DB_PASSWORD=VERY_SECURE_PASSWORD_HERE_MIN_16_CHARS
+DB_NAME=ssp_db_prod
+
+# JWT Configuration
+JWT_SECRET=PRODUCTION_JWT_SECRET_MINIMUM_32_RANDOM_CHARACTERS_CRYPTOGRAPHICALLY_SECURE
+JWT_EXPIRES_IN=1d
+
+# Server Configuration
+PORT=3000
+
+# Admin Seed
+SEED_ADMIN_PASSWORD=PRODUCTION_ADMIN_PASSWORD_CHANGE_AFTER_FIRST_LOGIN
+```
+
+<Warning>
+  **Security Critical:**
+  - Never use default or development secrets in production
+  - Use environment-specific secrets for each environment
+  - Store secrets securely (use secrets management tools)
+  - Never commit production `.env` files to version control
+  - Rotate secrets regularly
+</Warning>
+
+## Deployment Methods
+
+### Method 1: Traditional Server Deployment
+
+Deploy to a virtual private server (VPS) or dedicated server.
+
+<Steps>
+  <Step title="Prepare Server">
+    Install Node.js and PostgreSQL:
+    
+    ```bash
+    # Update system
+    sudo apt update && sudo apt upgrade -y
+    
+    # Install Node.js 18
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    
+    # Install PostgreSQL
+    sudo apt install postgresql postgresql-contrib
+    
+    # Install process manager
+    sudo npm install -g pm2
+    ```
+  </Step>
+  
+  <Step title="Setup Application">
+    Clone and configure:
+    
+    ```bash
+    # Clone repository
+    git clone <repository-url> /var/www/ssp-api
+    cd /var/www/ssp-api
+    
+    # Install dependencies
+    npm ci --only=production
+    
+    # Build application
+    npm run build
+    
+    # Create .env file
+    nano .env
+    # (Add production environment variables)
+    ```
+  </Step>
+  
+  <Step title="Setup Database">
+    Configure PostgreSQL:
+    
+    ```bash
+    sudo -u postgres psql
+    
+    CREATE DATABASE ssp_db_prod;
+    CREATE USER ssp_prod_user WITH ENCRYPTED PASSWORD 'secure_password';
+    GRANT ALL PRIVILEGES ON DATABASE ssp_db_prod TO ssp_prod_user;
+    \q
+    ```
+  </Step>
+  
+  <Step title="Run Migrations">
+    Migrations run automatically on startup, or run manually:
+    
+    ```bash
+    npm run typeorm migration:run
+    ```
+  </Step>
+  
+  <Step title="Seed Initial Data">
+    Create admin user:
+    
+    ```bash
+    npm run seed:admin
+    ```
+  </Step>
+  
+  <Step title="Start with PM2">
+    Use PM2 for process management:
+    
+    ```bash
+    # Start application
+    pm2 start dist/main.js --name ssp-api
+    
+    # Save PM2 config
+    pm2 save
+    
+    # Enable PM2 startup
+    pm2 startup
+    ```
+  </Step>
+</Steps>
+
+### Method 2: Docker Deployment
+
+Deploy using Docker containers.
+
+#### Dockerfile
+
+Create `Dockerfile`:
+
+```dockerfile
+# Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production
+
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
+
+# Expose port
+EXPOSE 3000
+
+# Start application
+CMD ["node", "dist/main"]
+```
+
+#### Docker Compose
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: ssp-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=ssp_user
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=ssp_db
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=1d
+      - PORT=3000
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
+    depends_on:
+      - postgres
+    networks:
+      - ssp-network
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: ssp-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=ssp_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ssp_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ssp-network
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+
+networks:
+  ssp-network:
+    driver: bridge
+```
+
+#### Deploy with Docker Compose
+
+```bash
+# Create .env file with secrets
+echo "DB_PASSWORD=secure_password" > .env
+echo "JWT_SECRET=your_jwt_secret_here" >> .env
+echo "SEED_ADMIN_PASSWORD=admin_password" >> .env
+
+# Build and start
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+
+# Stop
+docker-compose down
+```
+
+### Method 3: Cloud Platform Deployment
+
+Deploy to cloud platforms like AWS, Azure, or Google Cloud.
+
+#### AWS Elastic Beanstalk
+
+```bash
+# Install EB CLI
+pip install awsebcli
+
+# Initialize EB application
+eb init -p node.js ssp-api
+
+# Create environment
+eb create ssp-api-prod
+
+# Set environment variables
+eb setenv DB_HOST=xxx DB_USERNAME=xxx JWT_SECRET=xxx
+
+# Deploy
+eb deploy
+```
+
+#### Heroku
+
+```bash
+# Login to Heroku
+heroku login
+
+# Create app
+heroku create ssp-api-prod
+
+# Add PostgreSQL addon
+heroku addons:create heroku-postgresql:hobby-dev
+
+# Set environment variables
+heroku config:set JWT_SECRET=xxx
+heroku config:set JWT_EXPIRES_IN=1d
+heroku config:set SEED_ADMIN_PASSWORD=xxx
+
+# Deploy
+git push heroku main
+
+# Run migrations
+heroku run npm run typeorm migration:run
+
+# Seed data
+heroku run npm run seed:admin
+```
+
+#### Digital Ocean App Platform
+
+1. Connect your GitHub repository
+2. Configure build command: `npm run build`
+3. Configure run command: `node dist/main`
+4. Add PostgreSQL database
+5. Set environment variables in dashboard
+6. Deploy
+
+## Reverse Proxy Setup
+
+Use Nginx as a reverse proxy for better performance and security.
+
+### Nginx Configuration
+
+Create `/etc/nginx/sites-available/ssp-api`:
+
+```nginx
+server {
+    listen 80;
+    server_name api.example.com;
+
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+    # SSL certificates
+    ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Proxy settings
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req zone=api_limit burst=20 nodelay;
+}
+```
+
+Enable site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/ssp-api /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### SSL Certificate (Let's Encrypt)
+
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtain certificate
+sudo certbot --nginx -d api.example.com
+
+# Auto-renewal is configured automatically
+```
+
+## Process Management
+
+### PM2 Configuration
+
+Create `ecosystem.config.js`:
+
+```javascript
+module.exports = {
+  apps: [
+    {
+      name: 'ssp-api',
+      script: './dist/main.js',
+      instances: 2,
+      exec_mode: 'cluster',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+      },
+    },
+  ],
+};
+```
+
+Start with PM2:
+
+```bash
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### PM2 Commands
+
+```bash
+# Status
+pm2 status
+
+# Logs
+pm2 logs ssp-api
+
+# Restart
+pm2 restart ssp-api
+
+# Stop
+pm2 stop ssp-api
+
+# Monitoring
+pm2 monit
+```
+
+## Database Management
+
+### Automated Backups
+
+Create backup script `/usr/local/bin/backup-ssp-db.sh`:
+
+```bash
+#!/bin/bash
+
+BACKUP_DIR="/var/backups/ssp-db"
+DATE=$(date +%Y%m%d_%H%M%S)
+FILENAME="ssp_db_${DATE}.sql.gz"
+
+mkdir -p $BACKUP_DIR
+
+pg_dump -U ssp_prod_user ssp_db_prod | gzip > "${BACKUP_DIR}/${FILENAME}"
+
+# Keep only last 30 days
+find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
+
+echo "Backup completed: ${FILENAME}"
+```
+
+Make executable and add to cron:
+
+```bash
+chmod +x /usr/local/bin/backup-ssp-db.sh
+
+# Add to crontab (daily at 2 AM)
+crontab -e
+0 2 * * * /usr/local/bin/backup-ssp-db.sh
+```
+
+## Monitoring and Logging
+
+### Application Logging
+
+Configure structured logging in production:
+
+```typescript
+// In main.ts
+import { Logger } from '@nestjs/common';
+
+const logger = new Logger('Bootstrap');
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
+  
+  // ... rest of bootstrap
+  
+  await app.listen(port);
+  logger.log(`Application is running on port ${port}`);
+}
+```
+
+### PM2 Logs
+
+PM2 automatically manages logs:
+
+```bash
+# View logs
+pm2 logs ssp-api
+
+# Log rotation
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 10M
+pm2 set pm2-logrotate:retain 30
+```
+
+## Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Enable Compression" icon="compress">
+    Use compression middleware to reduce response sizes:
+    
+    ```bash
+    npm install compression
+    ```
+  </Card>
+  
+  <Card title="Database Connection Pooling" icon="database">
+    Configure TypeORM connection pool:
+    
+    ```typescript
+    extra: {
+      max: 20,
+      min: 5,
+    }
+    ```
+  </Card>
+  
+  <Card title="Cluster Mode" icon="server">
+    Run multiple instances with PM2 cluster mode for better CPU utilization
+  </Card>
+  
+  <Card title="Caching" icon="bolt">
+    Implement caching for frequently accessed data using Redis or in-memory cache
+  </Card>
+</CardGroup>
+
+## Security Hardening
+
+<Steps>
+  <Step title="Use HTTPS Only">
+    Always use HTTPS in production with valid SSL certificates
+  </Step>
+  
+  <Step title="Implement Rate Limiting">
+    Protect against DDoS and brute force attacks:
+    
+    ```bash
+    npm install @nestjs/throttler
+    ```
+  </Step>
+  
+  <Step title="Enable Helmet">
+    Set security headers:
+    
+    ```bash
+    npm install helmet
+    ```
+    
+    ```typescript
+    import helmet from 'helmet';
+    app.use(helmet());
+    ```
+  </Step>
+  
+  <Step title="Configure CORS">
+    Restrict cross-origin requests:
+    
+    ```typescript
+    app.enableCors({
+      origin: 'https://yourdomain.com',
+      credentials: true,
+    });
+    ```
+  </Step>
+  
+  <Step title="Validate Input">
+    Global validation is already configured via `ValidationPipe`
+  </Step>
+</Steps>
+
+## Health Checks
+
+Implement health check endpoints:
+
+```typescript
+// health.controller.ts
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('health')
+export class HealthController {
+  @Get()
+  check() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('db')
+  async checkDatabase() {
+    // Check database connection
+    return { database: 'connected' };
+  }
+}
+```
+
+## Continuous Deployment
+
+### GitHub Actions Example
+
+Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /var/www/ssp-api
+            git pull
+            npm ci --only=production
+            npm run build
+            pm2 restart ssp-api
+```
+
+## Troubleshooting Production Issues
+
+<Accordion title="Application won't start">
+  Check logs and environment:
+  
+  ```bash
+  # PM2 logs
+  pm2 logs ssp-api --lines 100
+  
+  # Check environment variables
+  pm2 env 0
+  
+  # Verify database connection
+  psql -U ssp_prod_user -d ssp_db_prod
+  ```
+</Accordion>
+
+<Accordion title="High memory usage">
+  Monitor and adjust PM2 configuration:
+  
+  ```bash
+  # Monitor memory
+  pm2 monit
+  
+  # Set memory limit
+  pm2 start dist/main.js --max-memory-restart 1G
+  ```
+</Accordion>
+
+<Accordion title="Database connection pool exhausted">
+  Increase connection pool size in TypeORM configuration:
+  
+  ```typescript
+  extra: {
+    max: 50, // Increase max connections
+    min: 10,
+  }
+  ```
+</Accordion>
+
+## Rollback Strategy
+
+If deployment fails:
+
+```bash
+# Rollback with PM2
+pm2 stop ssp-api
+git checkout <previous-commit>
+npm ci --only=production
+npm run build
+pm2 restart ssp-api
+
+# Or rollback database migration
+npm run typeorm migration:revert
+```
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Running Locally" icon="code" href="/development/running-locally">
+    Return to local development
+  </Card>
+  
+  <Card title="Testing" icon="flask" href="/development/testing">
+    Ensure code quality before deployment
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure production settings
+  </Card>
+  
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Production database configuration
+  </Card>
+</CardGroup>

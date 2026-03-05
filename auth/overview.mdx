@@ -1,0 +1,292 @@
+---
+title: Authentication Overview
+description: Learn how JWT-based authentication works in the SSP Backend API
+---
+
+# Authentication Overview
+
+The SSP Backend API uses **JWT (JSON Web Token)** authentication with role-based access control to secure all endpoints. This guide explains the authentication architecture and how it works.
+
+## Authentication Architecture
+
+The authentication system is built using:
+
+- **NestJS Passport** - Authentication middleware
+- **JWT Strategy** - Token-based authentication
+- **bcrypt** - Secure password hashing
+- **Guards** - Route protection and authorization
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant AuthService
+    participant Database
+    
+    Client->>API: POST /auth/login (credentials)
+    API->>AuthService: Validate credentials
+    AuthService->>Database: Find user by username
+    Database-->>AuthService: User data
+    AuthService->>AuthService: Compare password hash
+    AuthService->>AuthService: Generate JWT token
+    AuthService-->>Client: JWT token + user info
+    
+    Client->>API: GET /users (with JWT)
+    API->>API: Extract & validate token
+    API->>API: Check user role
+    API-->>Client: Protected resource
+```
+
+## How Authentication Works
+
+### 1. User Login
+
+Users authenticate by sending their username and password to `/auth/login`:
+
+```typescript
+// POST /auth/login
+{
+  "nomUsuario": "Admin",
+  "contrasena": "Admin1234"
+}
+```
+
+The `AuthService` (defined in `src/shared/auth/auth.service.ts:14`) validates credentials:
+
+```typescript
+async login(nomUsuario: string, contrasena: string) {
+  const user = await this.usersService.findByUsername(nomUsuario);
+
+  if (!user || !user.estatus) {
+    throw new UnauthorizedException('Credenciales inválidas');
+  }
+
+  const ok = await bcrypt.compare(contrasena, user.contrasena);
+  if (!ok) throw new UnauthorizedException('Credenciales inválidas');
+
+  // Payload que viaja dentro del token JWT
+  const payload = {
+    sub:        user.id,
+    rol:        user.rol,          // ej: "Admin", "Guia"
+    nomUsuario: user.nomUsuario,
+  };
+
+  return {
+    access_token: await this.jwtService.signAsync(payload),
+    user: {
+      id:        user.id,
+      nombre:    user.nombre,
+      rol:       user.rol,
+      nomUsuario: user.nomUsuario,
+    },
+  };
+}
+```
+
+### 2. Password Hashing
+
+Passwords are hashed using **bcrypt** with a salt rounds of 10. This ensures that even if the database is compromised, passwords remain secure.
+
+```typescript
+// From src/seeds/seed-admin.ts:32
+const password = process.env.SEED_ADMIN_PASSWORD || 'Admin1234';
+const hashed = await bcrypt.hash(password, 10);
+```
+
+### 3. JWT Token Generation
+
+When credentials are valid, the API generates a JWT token containing:
+
+- **sub**: User ID
+- **rol**: User role (Admin, Psicologo, TrabajoSocial, or Guia)
+- **nomUsuario**: Username
+
+The token is signed with the `JWT_SECRET` from environment variables and has an expiration time set by `JWT_EXPIRES_IN` (default: 1 day).
+
+**Configuration** (from `src/shared/auth/auth.module.ts:18`):
+
+```typescript
+JwtModule.registerAsync({
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) => {
+    const secret =
+      config.get<string>('JWT_SECRET') ?? 'dev_secret_change_me';
+    const expiresIn = (config.get<string>('JWT_EXPIRES_IN') ??
+      '1d') as StringValue;
+
+    return {
+      secret,
+      signOptions: { expiresIn },
+    };
+  },
+}),
+```
+
+### 4. Token Validation
+
+For subsequent requests, clients include the JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+The `JwtStrategy` (defined in `src/shared/auth/jwt.strategy.ts:8`) validates the token:
+
+```typescript
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(config: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: config.get<string>('JWT_SECRET') ?? 'dev_secret_change_me',
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(payload: any) {
+    // lo que regresa aquí se asigna a req.user
+    return {
+      userId: payload.sub,
+      rol: payload.rol,
+      nom_usuario: payload.nom_usuario,
+    };
+  }
+}
+```
+
+The validated payload is attached to `request.user`, making it available to route handlers.
+
+## Protecting Routes
+
+### JWT Auth Guard
+
+Protect routes by applying the `@UseGuards(JwtAuthGuard)` decorator:
+
+```typescript
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+
+@UseGuards(JwtAuthGuard)
+@Get('users')
+findAll() {
+  // Only authenticated users can access this
+  return this.usersService.findAll();
+}
+```
+
+### Roles Guard
+
+For role-based authorization, combine `JwtAuthGuard` with `RolesGuard`:
+
+```typescript
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
+import { Roles } from './common/decorators/roles.decorator';
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin')
+@Post('users')
+create(@Body() createUserDto: CreateUserDto) {
+  // Only Admin role can access this
+  return this.usersService.create(createUserDto);
+}
+```
+
+The `RolesGuard` (from `src/shared/common/guards/roles.guard.ts:9`) checks if the user's role matches:
+
+```typescript
+canActivate(context: ExecutionContext): boolean {
+  const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+    ROLES_KEY,
+    [context.getHandler(), context.getClass()],
+  );
+
+  if (!requiredRoles || requiredRoles.length === 0) return true;
+
+  const req = context.switchToHttp().getRequest();
+  const user = req.user;
+
+  return user && requiredRoles.includes(user.rol);
+}
+```
+
+## Authentication Response
+
+Successful login returns:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbCI6IkFkbWluIiwibm9tVXN1YXJpbyI6IkFkbWluIiwiaWF0IjoxNzA5NjQwMDAwLCJleHAiOjE3MDk3MjY0MDB9.signature",
+  "user": {
+    "id": 1,
+    "nombre": "Admin Principal",
+    "rol": "Admin",
+    "nomUsuario": "Admin"
+  }
+}
+```
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Strong JWT Secrets" icon="key">
+    Use a minimum 32-character random string for `JWT_SECRET` in production
+  </Card>
+  
+  <Card title="Token Expiration" icon="clock">
+    Set appropriate token expiration times based on security requirements (1 day is recommended)
+  </Card>
+  
+  <Card title="HTTPS Only" icon="shield">
+    Always use HTTPS in production to prevent token interception
+  </Card>
+  
+  <Card title="Password Policies" icon="lock">
+    Enforce strong password requirements and regular password changes
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Security Reminders:**
+  - Never commit `.env` files with real secrets
+  - Change default admin password immediately after first deployment
+  - Use environment-specific JWT secrets
+  - Implement token refresh mechanisms for long-lived sessions
+  - Consider implementing rate limiting on login endpoints
+</Warning>
+
+## Configuration
+
+Authentication is configured through environment variables:
+
+```bash
+# JWT Secret - MUST be changed in production
+JWT_SECRET=your_secret_key_minimum_32_characters_long
+
+# Token expiration (examples: 1h, 1d, 7d, 30d)
+JWT_EXPIRES_IN=1d
+```
+
+See the [Environment Variables](/guides/environment-variables) guide for complete configuration options.
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="JWT Tokens" icon="key" href="/auth/jwt-tokens">
+    Deep dive into JWT token structure and lifecycle
+  </Card>
+  
+  <Card title="User Roles" icon="users" href="/auth/roles">
+    Learn about the four user roles and their permissions
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    See the complete login endpoint documentation
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure authentication settings
+  </Card>
+</CardGroup>

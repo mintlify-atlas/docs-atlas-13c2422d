@@ -1,0 +1,107 @@
+---
+title: "Login"
+description: "Authenticate user and obtain JWT token"
+---
+
+Authenticates a user with username and password, returning a JWT token for subsequent API requests.
+
+## Endpoint
+
+```bash
+POST /auth/login
+```
+
+## Authentication
+
+This endpoint does not require authentication (it's used to obtain the token).
+
+## Request Body
+
+<ParamField path="nomUsuario" type="string" required>
+  Username for authentication
+</ParamField>
+
+<ParamField path="contrasena" type="string" required>
+  User password
+</ParamField>
+
+## Response
+
+<ResponseField name="access_token" type="string">
+  JWT token to use for authenticated requests
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  User information
+  
+  <Expandable title="User object">
+    <ResponseField name="id" type="number">
+      User ID
+    </ResponseField>
+    
+    <ResponseField name="nombre" type="string">
+      User's full name
+    </ResponseField>
+    
+    <ResponseField name="nomUsuario" type="string">
+      Username
+    </ResponseField>
+    
+    <ResponseField name="rol" type="string">
+      User role (Admin, Psicologo, TrabajoSocial, Guia)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nomUsuario": "admin",
+    "contrasena": "admin123"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "nombre": "Administrator",
+    "nomUsuario": "admin",
+    "rol": "Admin"
+  }
+}
+```
+
+## Error Responses
+
+### Invalid Credentials
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid credentials"
+}
+```
+
+### Validation Error
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "nomUsuario should not be empty",
+    "contrasena should not be empty"
+  ],
+  "error": "Bad Request"
+}
+```
+
+<Note>
+  Store the `access_token` securely and include it in the `Authorization` header for subsequent requests: `Authorization: Bearer {access_token}`
+</Note>

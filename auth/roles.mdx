@@ -1,0 +1,346 @@
+---
+title: User Roles
+description: Understanding the four user roles and role-based access control in the SSP Backend API
+---
+
+# User Roles & Permissions
+
+The SSP Backend API implements role-based access control (RBAC) with four distinct user roles. Each role has different permissions to access and modify resources.
+
+## Available Roles
+
+The system defines four user roles in the `RolUsuario` enum (from `src/shared/users/entities/user.entity.ts:9`):
+
+```typescript
+export enum RolUsuario {
+  Admin         = 'Admin',
+  Psicologo     = 'Psicologo',
+  TrabajoSocial = 'TrabajoSocial',
+  Guia          = 'Guia',
+}
+```
+
+### Role Descriptions
+
+<CardGroup cols={2}>
+  <Card title="Admin" icon="shield">
+    **Administrator**
+    
+    Full system access including user management, system configuration, and all CRUD operations on all resources.
+  </Card>
+  
+  <Card title="Psicologo" icon="brain">
+    **Psychologist**
+    
+    Access to beneficiary information, health profiles, and activity management. Can create and update psychological assessments.
+  </Card>
+  
+  <Card title="TrabajoSocial" icon="hand-holding-heart">
+    **Social Worker**
+    
+    Access to beneficiary management, activity coordination, and social service records. Primary role for case management.
+  </Card>
+  
+  <Card title="Guia" icon="user">
+    **Guide**
+    
+    Limited access for activity supervision and basic beneficiary information viewing. Cannot modify critical data.
+  </Card>
+</CardGroup>
+
+## Role Assignment
+
+Roles are assigned when creating a user. The role is stored in the `usuarios` table:
+
+```typescript
+// From src/shared/users/entities/user.entity.ts:24
+@Column({ type: 'enum', enum: RolUsuario })
+rol: RolUsuario;
+```
+
+### Creating Users with Roles
+
+Only administrators can create new users:
+
+```typescript
+POST /users
+Authorization: Bearer <admin_token>
+
+{
+  "nombre": "Dr. Juan Perez",
+  "rol": "Psicologo",
+  "nomUsuario": "jperez",
+  "contrasena": "SecurePassword123"
+}
+```
+
+## Role-Based Access Control
+
+### How RBAC Works
+
+The system uses two guards to enforce authorization:
+
+1. **JwtAuthGuard**: Verifies the user is authenticated
+2. **RolesGuard**: Checks if the user has the required role(s)
+
+### RolesGuard Implementation
+
+From `src/shared/common/guards/roles.guard.ts:9`:
+
+```typescript
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (!requiredRoles || requiredRoles.length === 0) return true;
+
+    const req = context.switchToHttp().getRequest();
+    const user = req.user;
+
+    return user && requiredRoles.includes(user.rol);
+  }
+}
+```
+
+### Protecting Routes with Roles
+
+Use the `@Roles()` decorator to restrict access:
+
+```typescript
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
+import { Roles } from './common/decorators/roles.decorator';
+
+// Only Admin can create users
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin')
+@Post('users')
+createUser(@Body() createUserDto: CreateUserDto) {
+  return this.usersService.create(createUserDto);
+}
+
+// Admin and TrabajoSocial can create beneficiarios
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin', 'TrabajoSocial')
+@Post('beneficiarios')
+createBeneficiario(@Body() dto: CreateBeneficiarioDto) {
+  return this.beneficiariosService.create(dto);
+}
+
+// All authenticated users can list beneficiarios
+@UseGuards(JwtAuthGuard)
+@Get('beneficiarios')
+findAll() {
+  return this.beneficiariosService.findAll();
+}
+```
+
+## Role Permissions Matrix
+
+Here's a typical permissions matrix for the SSP Backend API:
+
+| Resource | Admin | Psicologo | TrabajoSocial | Guia |
+|----------|-------|-----------|---------------|------|
+| **Users** |
+| Create User | ✅ | ❌ | ❌ | ❌ |
+| List Users | ✅ | ❌ | ❌ | ❌ |
+| Update User | ✅ | ❌ | ❌ | ❌ |
+| Delete User | ✅ | ❌ | ❌ | ❌ |
+| **Beneficiarios** |
+| Create | ✅ | ✅ | ✅ | ❌ |
+| List/View | ✅ | ✅ | ✅ | ✅ |
+| Update | ✅ | ✅ | ✅ | ❌ |
+| Delete | ✅ | ❌ | ✅ | ❌ |
+| **Actividades** |
+| Create | ✅ | ✅ | ✅ | ❌ |
+| List/View | ✅ | ✅ | ✅ | ✅ |
+| Update | ✅ | ✅ | ✅ | ❌ |
+| Deactivate | ✅ | ❌ | ✅ | ❌ |
+| **Salud** |
+| Create Profile | ✅ | ✅ | ✅ | ❌ |
+| View Profile | ✅ | ✅ | ✅ | ✅ |
+| Update Profile | ✅ | ✅ | ✅ | ❌ |
+| Delete Profile | ✅ | ✅ | ❌ | ❌ |
+
+<Info>
+  **Note**: Actual permissions may vary based on your specific implementation. This is a recommended baseline configuration.
+</Info>
+
+## User Entity Structure
+
+The complete user entity (from `src/shared/users/entities/user.entity.ts:17`):
+
+```typescript
+@Entity('usuarios')
+export class User {
+  @PrimaryGeneratedColumn('identity')
+  id: number;
+
+  @Column({ type: 'varchar', length: 150 })
+  nombre: string;
+
+  @Column({ type: 'enum', enum: RolUsuario })
+  rol: RolUsuario;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 100 })
+  nomUsuario: string;
+
+  @Column({ type: 'text' })
+  contrasena: string;
+
+  @Column({ type: 'boolean', default: true })
+  estatus: boolean;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  creadoEn: Date;
+}
+```
+
+### User Fields
+
+- **id**: Auto-generated unique identifier
+- **nombre**: Full name of the user (max 150 characters)
+- **rol**: User role (Admin, Psicologo, TrabajoSocial, or Guia)
+- **nomUsuario**: Unique username for login (max 100 characters)
+- **contrasena**: Bcrypt-hashed password
+- **estatus**: Active/inactive status (default: true)
+- **creadoEn**: Account creation timestamp
+
+## Accessing User Information
+
+In route handlers, access the authenticated user's information from the request object:
+
+```typescript
+@UseGuards(JwtAuthGuard)
+@Get('profile')
+getProfile(@Request() req) {
+  // Access user data from JWT payload
+  return {
+    userId: req.user.userId,
+    role: req.user.rol,
+    username: req.user.nom_usuario
+  };
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Principle of Least Privilege" icon="lock">
+    Grant users only the minimum permissions they need to perform their job functions
+  </Card>
+  
+  <Card title="Regular Audits" icon="magnifying-glass">
+    Periodically review user roles and permissions to ensure they're still appropriate
+  </Card>
+  
+  <Card title="Role Documentation" icon="book">
+    Document what each role can and cannot do for clarity and compliance
+  </Card>
+  
+  <Card title="Disable, Don't Delete" icon="user-slash">
+    Set `estatus: false` instead of deleting users to maintain audit trails
+  </Card>
+</CardGroup>
+
+## Common Scenarios
+
+### Scenario 1: Creating a New Social Worker
+
+```bash
+# Admin creates a new social worker account
+curl -X POST http://localhost:3000/users \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Maria Gonzalez",
+    "rol": "TrabajoSocial",
+    "nomUsuario": "mgonzalez",
+    "contrasena": "SecurePass123"
+  }'
+```
+
+### Scenario 2: Restricting Access to Admin Only
+
+```typescript
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin')
+@Delete('users/:id')
+remove(@Param('id') id: string) {
+  // Only admins can delete users
+  return this.usersService.remove(+id);
+}
+```
+
+### Scenario 3: Multiple Roles Can Access
+
+```typescript
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin', 'Psicologo', 'TrabajoSocial')
+@Patch('salud/:id')
+update(@Param('id') id: string, @Body() dto: UpdateSaludDto) {
+  // Admins, psychologists, and social workers can update health profiles
+  return this.saludService.update(+id, dto);
+}
+```
+
+## Deactivating Users
+
+Instead of deleting users, set their status to inactive:
+
+```typescript
+@Patch('users/:id/deactivate')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('Admin')
+deactivate(@Param('id') id: string) {
+  return this.usersService.update(+id, { estatus: false });
+}
+```
+
+Inactive users cannot login (checked in `src/shared/auth/auth.service.ts:17`):
+
+```typescript
+if (!user || !user.estatus) {
+  throw new UnauthorizedException('Credenciales inválidas');
+}
+```
+
+## Security Considerations
+
+<Warning>
+  **Important Security Notes:**
+  
+  - Never expose role-checking logic to the client - always enforce on the server
+  - Log all role changes and permission grants for audit purposes
+  - Implement session timeout for inactive users, especially for Admin roles
+  - Consider implementing multi-factor authentication for Admin accounts
+  - Regularly review and update role permissions as requirements change
+</Warning>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Authentication Overview" icon="shield" href="/auth/overview">
+    Learn how authentication works in the SSP API
+  </Card>
+  
+  <Card title="JWT Tokens" icon="key" href="/auth/jwt-tokens">
+    Understanding JWT token structure and lifecycle
+  </Card>
+  
+  <Card title="Users API" icon="code" href="/api/users/create">
+    API documentation for user management endpoints
+  </Card>
+  
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Learn about the database schema and user storage
+  </Card>
+</CardGroup>

@@ -1,0 +1,93 @@
+---
+title: "Filter Actividades"
+description: "Filter activities by category"
+---
+
+Retrieves activities filtered by their category.
+
+## Endpoint
+
+```bash
+GET /actividades/categoria
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Query Parameters
+
+<ParamField query="cat" type="string" required>
+  Activity category to filter by. Must be one of:
+  - `TRABAJO_COMUNITARIO` - Community work
+  - `LIDERAZGO_COMUNITARIO` - Community leadership
+  - `ATENCION_SUSTANCIAS` - Substance abuse treatment
+  - `EDUCACION_PARA_LA_VIDA` - Life education
+  - `PROMOCION_CULTURAL_DEPORTIVA` - Cultural and sports promotion
+</ParamField>
+
+## Response
+
+Returns an array of activity objects matching the specified category.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the activity
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Name of the activity
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Description of the activity
+</ResponseField>
+
+<ResponseField name="objetivo" type="string">
+  Objective of the activity
+</ResponseField>
+
+<ResponseField name="categoria" type="string">
+  Activity category
+</ResponseField>
+
+<ResponseField name="activo" type="boolean">
+  Whether the activity is active
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "http://localhost:3000/actividades/categoria?cat=TRABAJO_COMUNITARIO" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Limpieza de parques públicos",
+    "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+    "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+    "categoria": "TRABAJO_COMUNITARIO",
+    "activo": true
+  },
+  {
+    "id": 3,
+    "nombre": "Reparación de instalaciones comunitarias",
+    "descripcion": "Mantenimiento de espacios públicos",
+    "objetivo": "Mejorar infraestructura comunitaria",
+    "categoria": "TRABAJO_COMUNITARIO",
+    "activo": true
+  }
+]
+```
+
+<Note>
+  This endpoint is useful for organizing activities by their type and purpose.
+</Note>

@@ -1,0 +1,527 @@
+---
+title: Running Locally
+description: Set up your local development environment and run the SSP Backend API
+---
+
+# Running Locally
+
+This guide walks you through setting up and running the SSP Backend API in your local development environment.
+
+## Prerequisites
+
+Before you begin, ensure you have completed the [Installation](/installation) guide and have:
+
+- Node.js v18+ installed
+- PostgreSQL v12+ installed and running
+- All project dependencies installed (`npm install`)
+- `.env` file configured with database credentials
+
+## Development Scripts
+
+The application provides several npm scripts for development (defined in `package.json:8`):
+
+```json
+{
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  }
+}
+```
+
+## Starting the Development Server
+
+### Standard Development Mode
+
+Start the server with hot-reload enabled:
+
+```bash
+npm run start:dev
+```
+
+This command:
+
+- Compiles TypeScript on the fly
+- Watches for file changes
+- Automatically restarts the server when files change
+- Enables development logging
+
+**Output:**
+
+```
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [NestFactory] Starting Nest application...
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] AppModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] ConfigModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] TypeOrmModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] AuthModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] UsersModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [InstanceLoader] SharedModule dependencies initialized
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [SeederService] ✅ Admin ya existe — seed omitido
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [RoutesResolver] AppController {/}:
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [RouterExplorer] Mapped {/, GET} route
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [RouterExplorer] Mapped {/auth/login, POST} route
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [RouterExplorer] Mapped {/users, GET} route
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [RouterExplorer] Mapped {/users, POST} route
+[Nest] 12345  - 03/05/2026, 10:00:00 AM     LOG [NestApplication] Nest application successfully started
+```
+
+<Info>
+  The server runs on port **3000** by default (or the `PORT` specified in `.env`).
+</Info>
+
+### Debug Mode
+
+Start with debugging enabled for use with debuggers:
+
+```bash
+npm run start:debug
+```
+
+This enables the Node.js inspector on port **9229**, allowing you to attach a debugger.
+
+### Production-like Mode
+
+Test the production build locally:
+
+```bash
+# Build the application first
+npm run build
+
+# Run the compiled JavaScript
+npm run start:prod
+```
+
+<Warning>
+  Production mode (`start:prod`) doesn't watch for changes. Use `start:dev` during development.
+</Warning>
+
+## Application Bootstrap Process
+
+Understanding how the application starts (from `src/main.ts`):
+
+```typescript
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  await app.listen(process.env.PORT ?? 3000);
+}
+bootstrap();
+```
+
+### Startup Sequence
+
+<Steps>
+  <Step title="Create NestJS Application">
+    `NestFactory.create(AppModule)` initializes the application with the root module
+  </Step>
+  
+  <Step title="Load Configuration">
+    `ConfigModule` loads environment variables from `.env`
+  </Step>
+  
+  <Step title="Initialize Database">
+    TypeORM connects to PostgreSQL and runs migrations (if `migrationsRun: true`)
+  </Step>
+  
+  <Step title="Run Seeders">
+    `SeederService` executes on application bootstrap to create initial admin user
+  </Step>
+  
+  <Step title="Configure Global Pipes">
+    `ValidationPipe` is set up for automatic DTO validation and transformation
+  </Step>
+  
+  <Step title="Register Routes">
+    All controllers register their routes and NestJS logs mapped endpoints
+  </Step>
+  
+  <Step title="Start HTTP Server">
+    Application begins listening on the configured port (default: 3000)
+  </Step>
+</Steps>
+
+## Validation Configuration
+
+The application uses global validation (from `src/main.ts:7`):
+
+```typescript
+app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+```
+
+**Options explained:**
+
+- **whitelist: true** - Strips properties that don't have decorators in DTOs
+- **transform: true** - Automatically transforms payloads to DTO instances
+
+This ensures all incoming requests are validated against DTO schemas using `class-validator` decorators.
+
+## Hot Reload
+
+The development server uses NestJS's built-in hot-reload functionality:
+
+- **File Changes**: Any TypeScript file change triggers recompilation
+- **Auto-Restart**: Server automatically restarts with new code
+- **Fast Feedback**: See changes in seconds without manual restart
+
+**Example workflow:**
+
+1. Edit `src/shared/users/users.controller.ts`
+2. Save the file
+3. Watch terminal output: "File change detected. Starting incremental compilation..."
+4. Server restarts automatically with your changes
+
+## Development Workflow
+
+### Typical Development Day
+
+<Steps>
+  <Step title="Start Services">
+    ```bash
+    # Start PostgreSQL (if not running)
+    sudo systemctl start postgresql
+    # or on macOS: brew services start postgresql
+    ```
+  </Step>
+  
+  <Step title="Start Development Server">
+    ```bash
+    npm run start:dev
+    ```
+  </Step>
+  
+  <Step title="Make Changes">
+    Edit source files in `src/`
+    
+    Server automatically reloads on save
+  </Step>
+  
+  <Step title="Test Changes">
+    Use cURL, Postman, or your API client to test endpoints
+    
+    ```bash
+    curl http://localhost:3000/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{"nomUsuario": "Admin", "contrasena": "Admin1234"}'
+    ```
+  </Step>
+  
+  <Step title="Check Logs">
+    Monitor terminal output for errors and request logs
+  </Step>
+  
+  <Step title="Run Tests">
+    Periodically run tests to ensure nothing breaks
+    
+    ```bash
+    npm test
+    ```
+  </Step>
+</Steps>
+
+## Debugging
+
+### VS Code Debugging
+
+Create `.vscode/launch.json` for debugging:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug NestJS",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "console": "integratedTerminal",
+      "restart": true,
+      "protocol": "inspector",
+      "port": 9229,
+      "autoAttachChildProcesses": true
+    }
+  ]
+}
+```
+
+**Usage:**
+
+1. Set breakpoints in your code
+2. Press F5 or click "Run > Start Debugging"
+3. Make requests to trigger breakpoints
+4. Inspect variables, step through code, etc.
+
+### Chrome DevTools Debugging
+
+```bash
+# Start in debug mode
+npm run start:debug
+```
+
+Then:
+
+1. Open Chrome and go to `chrome://inspect`
+2. Click "Open dedicated DevTools for Node"
+3. Your application will appear in the list
+4. Set breakpoints and debug visually
+
+### Logging
+
+Add logging to your code:
+
+```typescript
+import { Logger } from '@nestjs/common';
+
+@Injectable()
+export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
+  async findAll() {
+    this.logger.log('Finding all users');
+    return this.userRepo.find();
+  }
+
+  async create(dto: CreateUserDto) {
+    this.logger.debug(`Creating user: ${dto.nomUsuario}`);
+    // ...
+  }
+}
+```
+
+## Code Quality Tools
+
+### Linting
+
+Check and fix code style issues:
+
+```bash
+# Check for linting errors
+npm run lint
+
+# Auto-fix linting errors
+npm run lint -- --fix
+```
+
+The project uses ESLint with TypeScript support.
+
+### Formatting
+
+Format code with Prettier:
+
+```bash
+npm run format
+```
+
+This formats all TypeScript files in `src/` and `test/` directories.
+
+### Pre-commit Hooks
+
+Consider setting up Husky for pre-commit hooks:
+
+```bash
+npm install --save-dev husky lint-staged
+
+# Initialize husky
+npx husky init
+```
+
+Add to `package.json`:
+
+```json
+{
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
+```
+
+## Database Management
+
+### Viewing Data
+
+Connect to the database during development:
+
+```bash
+# PostgreSQL CLI
+psql -U ssp_user -d ssp_db
+
+# List tables
+\dt
+
+# Query users
+SELECT * FROM usuarios;
+
+# Exit
+\q
+```
+
+### Resetting Database
+
+During development, you may need to reset the database:
+
+```bash
+# Drop and recreate database
+psql -U postgres
+DROP DATABASE ssp_db;
+CREATE DATABASE ssp_db;
+GRANT ALL PRIVILEGES ON DATABASE ssp_db TO ssp_user;
+\q
+
+# Restart app (migrations will run automatically)
+npm run start:dev
+
+# Re-seed data
+npm run seed:admin
+```
+
+## Common Development Tasks
+
+### Adding a New Endpoint
+
+```typescript
+// In a controller
+@Get('beneficiarios/activos')
+@UseGuards(JwtAuthGuard)
+findActive() {
+  return this.beneficiariosService.findActive();
+}
+```
+
+Save the file and the server reloads. Test immediately:
+
+```bash
+curl http://localhost:3000/beneficiarios/activos \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Creating a New Module
+
+Use NestJS CLI:
+
+```bash
+# Generate a new module
+nest generate module reports
+
+# Generate a controller
+nest generate controller reports
+
+# Generate a service
+nest generate service reports
+```
+
+### Working with Environment Variables
+
+Edit `.env` file and restart the server:
+
+```bash
+# .env
+NEW_FEATURE_ENABLED=true
+```
+
+Access in code:
+
+```typescript
+const enabled = this.config.get<boolean>('NEW_FEATURE_ENABLED');
+```
+
+## Performance Tips
+
+<CardGroup cols={2}>
+  <Card title="Use --watch for Fast Reload" icon="bolt">
+    The `--watch` flag in `start:dev` provides fast incremental compilation
+  </Card>
+  
+  <Card title="Disable Unnecessary Logs" icon="eye-slash">
+    Reduce log verbosity during development for faster startup
+  </Card>
+  
+  <Card title="Use SWC for Faster Builds" icon="gauge-high">
+    Consider using SWC instead of tsc for faster compilation (NestJS supports it)
+  </Card>
+  
+  <Card title="Optimize Database Queries" icon="database">
+    Use database indexes and query optimization for faster responses
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="Port already in use">
+  Another process is using port 3000:
+  
+  ```bash
+  # Find process using port 3000
+  lsof -i :3000
+  
+  # Kill the process
+  kill -9 <PID>
+  
+  # Or use a different port
+  # In .env
+  PORT=3001
+  ```
+</Accordion>
+
+<Accordion title="Database connection errors">
+  Ensure PostgreSQL is running:
+  
+  ```bash
+  # Check status
+  sudo systemctl status postgresql
+  
+  # Start PostgreSQL
+  sudo systemctl start postgresql
+  
+  # Verify connection
+  psql -U ssp_user -d ssp_db
+  ```
+</Accordion>
+
+<Accordion title="TypeORM entity not found">
+  If a new entity isn't recognized:
+  
+  1. Ensure it's registered in module: `TypeOrmModule.forFeature([NewEntity])`
+  2. Check `autoLoadEntities: true` in app.module.ts
+  3. Restart the development server
+</Accordion>
+
+<Accordion title="Hot reload not working">
+  If changes aren't being detected:
+  
+  1. Ensure you're using `npm run start:dev` (not `start`)
+  2. Check file permissions
+  3. Try deleting `dist/` folder and restarting
+  4. Restart your IDE/editor
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Testing" icon="flask" href="/development/testing">
+    Write and run tests for your code
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Deploy your application to production
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure development settings
+  </Card>
+  
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Learn about database configuration
+  </Card>
+</CardGroup>

@@ -1,0 +1,120 @@
+---
+title: "Filter Salud by Aptitud"
+description: "Filter health profiles by physical aptitude"
+---
+
+Retrieves health profiles filtered by physical fitness status.
+
+## Endpoint
+
+```bash
+GET /salud/aptitud
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Query Parameters
+
+<ParamField query="esApto" type="string" required>
+  Physical fitness filter. Must be:
+  - `true` - Filter beneficiarios who are physically fit
+  - `false` - Filter beneficiarios who are not physically fit
+</ParamField>
+
+## Response
+
+Returns an array of health profile objects matching the filter.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the health profile
+</ResponseField>
+
+<ResponseField name="beneficiarioId" type="number">
+  ID of the associated beneficiario
+</ResponseField>
+
+<ResponseField name="esAptoFisico" type="boolean">
+  Physical fitness status
+</ResponseField>
+
+<ResponseField name="padecEnfermedad" type="boolean">
+  Medical condition status
+</ResponseField>
+
+<ResponseField name="nombreEnfermedad" type="string">
+  Name of medical condition
+</ResponseField>
+
+<ResponseField name="consumeSustancias" type="boolean">
+  Substance consumption status
+</ResponseField>
+
+<ResponseField name="tipoSustancias" type="string">
+  Type of substances
+</ResponseField>
+
+<ResponseField name="afiliadoServicioSalud" type="string">
+  Health service affiliation
+</ResponseField>
+
+<ResponseField name="necesitaLentes" type="boolean">
+  Glasses requirement
+</ResponseField>
+
+<ResponseField name="observacionesMedicas" type="string">
+  Medical observations
+</ResponseField>
+
+<ResponseField name="fechaActualizacion" type="string">
+  Last update timestamp
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "http://localhost:3000/salud/aptitud?esApto=true" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "beneficiarioId": 1,
+    "esAptoFisico": true,
+    "padecEnfermedad": false,
+    "nombreEnfermedad": null,
+    "consumeSustancias": false,
+    "tipoSustancias": null,
+    "afiliadoServicioSalud": "IMSS",
+    "necesitaLentes": false,
+    "observacionesMedicas": null,
+    "fechaActualizacion": "2026-03-05T10:30:00.000Z"
+  },
+  {
+    "id": 3,
+    "beneficiarioId": 3,
+    "esAptoFisico": true,
+    "padecEnfermedad": false,
+    "nombreEnfermedad": null,
+    "consumeSustancias": false,
+    "tipoSustancias": null,
+    "afiliadoServicioSalud": "Seguro Popular",
+    "necesitaLentes": true,
+    "observacionesMedicas": null,
+    "fechaActualizacion": "2026-03-05T12:15:00.000Z"
+  }
+]
+```
+
+<Note>
+  This endpoint is useful for identifying beneficiarios who are physically fit and can participate in certain activities that require physical exertion.
+</Note>

@@ -1,0 +1,73 @@
+---
+title: "API Overview"
+description: "Overview of the SSP Backend API endpoints and usage"
+---
+
+The SSP Backend API is a RESTful API built with NestJS that provides endpoints for managing beneficiaries, activities, health profiles, and users in the SSP (Sistema de Servicio Penal/Social) platform.
+
+## Base URL
+
+```
+http://localhost:3000
+```
+
+## Authentication
+
+Most endpoints require JWT authentication. Include the JWT token in the `Authorization` header:
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+See the [Authentication](/api/auth/login) section for details on obtaining a token.
+
+## Available Resources
+
+The API provides the following resource endpoints:
+
+### Authentication
+- **POST /auth/login** - Authenticate and obtain JWT token
+
+### Users
+- **POST /users** - Create a new user (Admin only)
+- **GET /users** - List all users (Admin only)
+
+### Beneficiarios
+- **POST /beneficiarios** - Create a new beneficiario
+- **GET /beneficiarios** - List all beneficiarios
+- **GET /beneficiarios/:id** - Get a specific beneficiario
+- **PATCH /beneficiarios/:id** - Update a beneficiario
+- **DELETE /beneficiarios/:id** - Delete a beneficiario
+- **GET /beneficiarios/filtrar** - Filter beneficiarios by time unit
+
+### Actividades
+- **POST /actividades** - Create a new activity
+- **GET /actividades** - List active activities
+- **GET /actividades/todas** - List all activities (including inactive)
+- **GET /actividades/:id** - Get a specific activity
+- **PATCH /actividades/:id** - Update an activity
+- **PATCH /actividades/:id/desactivar** - Deactivate an activity
+- **PATCH /actividades/:id/reactivar** - Reactivate an activity
+- **GET /actividades/categoria** - Filter activities by category
+
+### Salud (Health Profiles)
+- **POST /salud** - Create a new health profile
+- **GET /salud** - List all health profiles
+- **GET /salud/:id** - Get a specific health profile
+- **PATCH /salud/:id** - Update a health profile
+- **DELETE /salud/:id** - Delete a health profile
+- **GET /salud/aptitud** - Filter by physical aptitude
+- **GET /salud/beneficiario/:beneficiarioId** - Get health profile by beneficiario
+- **PATCH /salud/beneficiario/:beneficiarioId** - Update health profile by beneficiario
+
+## Response Format
+
+All API responses return JSON data. Successful responses typically return the requested resource or an array of resources.
+
+## Rate Limiting
+
+Currently, there are no rate limits on API requests.
+
+## API Versioning
+
+The API is currently at version 1 and does not use versioning in the URL path.

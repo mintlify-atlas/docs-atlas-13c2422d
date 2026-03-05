@@ -1,0 +1,495 @@
+---
+title: Database Seeding
+description: How to populate the database with initial data using seed scripts in the SSP Backend API
+---
+
+# Database Seeding
+
+Seeding is the process of populating your database with initial data. The SSP Backend API includes seeding functionality to create an initial admin user and other necessary data.
+
+## Seed Admin Script
+
+The primary seeding mechanism is the **seed-admin** script, which creates an initial administrator account.
+
+### Running the Seed Script
+
+Execute the seed script using npm:
+
+```bash
+npm run seed:admin
+```
+
+This command is defined in `package.json:21`:
+
+```json
+{
+  "scripts": {
+    "seed:admin": "ts-node --transpile-only -r dotenv/config src/seeds/seed-admin.ts"
+  }
+}
+```
+
+### What the Script Does
+
+The script:
+
+1. Connects to the PostgreSQL database
+2. Checks if an admin user already exists
+3. Creates a new admin user if none exists
+4. Hashes the password using bcrypt
+5. Saves the user to the database
+
+### Script Output
+
+**If admin already exists:**
+
+```
+✅ Admin ya existe: Admin
+```
+
+**If admin is created:**
+
+```
+✅ Admin creado: admin / Admin1234
+```
+
+## Seed Admin Implementation
+
+The standalone seed script is located at `src/seeds/seed-admin.ts`:
+
+```typescript
+import 'dotenv/config';
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User, RolUsuario } from '../shared/users/entities/user.entity';
+
+async function seed() {
+  const ds = new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 5432),
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    entities: [User],
+    synchronize: false, // NO usar sync en seed
+  });
+
+  await ds.initialize();
+
+  const repo = ds.getRepository(User);
+
+  const adminUser = await repo.findOne({ where: { nomUsuario: 'Admin' } });
+
+  if (adminUser) {
+    console.log('✅ Admin ya existe: Admin');
+    await ds.destroy();
+    return;
+  }
+
+  const password = process.env.SEED_ADMIN_PASSWORD || 'Admin1234';
+  const hashed = await bcrypt.hash(password, 10);
+
+  const user = repo.create({
+    nombre: 'Admin Principal',
+    rol: RolUsuario.Admin,
+    nomUsuario: 'Admin',
+    contrasena: hashed,
+    estatus: true,
+  });
+
+  await repo.save(user);
+  console.log(`✅ Admin creado: admin / ${password}`);
+
+  await ds.destroy();
+}
+
+seed().catch((err) => {
+  console.error('❌ Error en seed:', err);
+  process.exit(1);
+});
+```
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Idempotent" icon="check-double">
+    Safe to run multiple times - won't create duplicate admins
+  </Card>
+  
+  <Card title="Environment-Aware" icon="gear">
+    Uses environment variables for database connection and password
+  </Card>
+  
+  <Card title="Secure Hashing" icon="lock">
+    Passwords are hashed with bcrypt before storage
+  </Card>
+  
+  <Card title="Standalone" icon="terminal">
+    Runs independently without starting the full application
+  </Card>
+</CardGroup>
+
+## Application Bootstrap Seeding
+
+The application also includes a `SeederService` that runs automatically when the application starts.
+
+### SeederService Implementation
+
+From `src/seeds/seeder.service.ts`:
+
+```typescript
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User, RolUsuario } from '../shared/users/entities/user.entity';
+
+@Injectable()
+export class SeederService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(SeederService.name);
+
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+  ) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    await this.seedAdmin();
+  }
+
+  private async seedAdmin(): Promise<void> {
+    const existe = await this.userRepo.findOne({
+      where: { nomUsuario: 'admin' },
+    });
+
+    if (existe) {
+      this.logger.log('✅ Admin ya existe — seed omitido');
+      return;
+    }
+
+    const password = process.env.SEED_ADMIN_PASSWORD ?? 'Admin1234';
+    const hashed   = await bcrypt.hash(password, 10);
+
+    const admin = this.userRepo.create({
+      nombre:      'Admin Principal',
+      rol:         RolUsuario.Admin,
+      nomUsuario: 'admin',
+      contrasena:  hashed,
+      estatus:     true,
+    });
+
+    await this.userRepo.save(admin);
+    this.logger.log(`✅ Admin creado: admin / ${password}`);
+  }
+}
+```
+
+### When Seeding Occurs
+
+The `SeederService` implements `OnApplicationBootstrap`, which means it runs:
+
+- **Automatically** when the application starts
+- **After** all modules are initialized
+- **Before** the application begins listening for requests
+
+This ensures an admin user always exists for fresh installations.
+
+## Admin User Details
+
+The seeded admin user has the following properties:
+
+| Field | Value | Source |
+|-------|-------|--------|
+| **Username** | `Admin` | Hardcoded |
+| **Password** | `Admin1234` | `SEED_ADMIN_PASSWORD` env var or default |
+| **Name** | `Admin Principal` | Hardcoded |
+| **Role** | `Admin` | RolUsuario.Admin |
+| **Status** | `true` (active) | Default |
+
+<Warning>
+  **Security**: Always change the default admin password after first deployment, especially in production environments!
+</Warning>
+
+## Customizing the Admin Password
+
+Set a custom admin password using the `SEED_ADMIN_PASSWORD` environment variable:
+
+```bash
+# In your .env file
+SEED_ADMIN_PASSWORD=MySecurePassword123!
+```
+
+Then run the seed script:
+
+```bash
+npm run seed:admin
+```
+
+## Creating Additional Seed Scripts
+
+You can create additional seed scripts for other data:
+
+### Example: Seeding Activities
+
+Create `src/seeds/seed-activities.ts`:
+
+```typescript
+import 'dotenv/config';
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
+import { Actividad, ActividadCategoriaEnum } from '../shared/actividades/actividad.entity';
+
+async function seedActivities() {
+  const ds = new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 5432),
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    entities: [Actividad],
+    synchronize: false,
+  });
+
+  await ds.initialize();
+  const repo = ds.getRepository(Actividad);
+
+  const activities = [
+    {
+      nombre: 'Limpieza de Parques',
+      descripcion: 'Limpieza y mantenimiento de espacios públicos',
+      objetivo: 'Mejorar el entorno comunitario',
+      categoria: ActividadCategoriaEnum.TRABAJO_COMUNITARIO,
+      activo: true,
+    },
+    {
+      nombre: 'Taller de Liderazgo',
+      descripcion: 'Desarrollo de habilidades de liderazgo comunitario',
+      objetivo: 'Formar líderes comunitarios',
+      categoria: ActividadCategoriaEnum.LIDERAZGO_COMUNITARIO,
+      activo: true,
+    },
+    {
+      nombre: 'Grupo de Apoyo',
+      descripcion: 'Sesión grupal para personas en recuperación',
+      objetivo: 'Apoyar la recuperación de adicciones',
+      categoria: ActividadCategoriaEnum.ATENCION_SUSTANCIAS,
+      activo: true,
+    },
+  ];
+
+  for (const activity of activities) {
+    const exists = await repo.findOne({ where: { nombre: activity.nombre } });
+    if (!exists) {
+      await repo.save(repo.create(activity));
+      console.log(`✅ Actividad creada: ${activity.nombre}`);
+    } else {
+      console.log(`ℹ️ Actividad ya existe: ${activity.nombre}`);
+    }
+  }
+
+  await ds.destroy();
+  console.log('✅ Seeding de actividades completado');
+}
+
+seedActivities().catch((err) => {
+  console.error('❌ Error en seed de actividades:', err);
+  process.exit(1);
+});
+```
+
+Add a script to `package.json`:
+
+```json
+{
+  "scripts": {
+    "seed:admin": "ts-node --transpile-only -r dotenv/config src/seeds/seed-admin.ts",
+    "seed:activities": "ts-node --transpile-only -r dotenv/config src/seeds/seed-activities.ts",
+    "seed:all": "npm run seed:admin && npm run seed:activities"
+  }
+}
+```
+
+Run the new seed:
+
+```bash
+npm run seed:activities
+
+# Or seed everything
+npm run seed:all
+```
+
+## Best Practices for Seeding
+
+<Steps>
+  <Step title="Make Seeds Idempotent">
+    Always check if data exists before inserting to avoid duplicates
+    
+    ```typescript
+    const exists = await repo.findOne({ where: { nomUsuario: 'admin' } });
+    if (exists) return;
+    ```
+  </Step>
+  
+  <Step title="Use Environment Variables">
+    Allow configuration through environment variables for flexibility
+    
+    ```typescript
+    const password = process.env.SEED_ADMIN_PASSWORD || 'default';
+    ```
+  </Step>
+  
+  <Step title="Handle Errors Gracefully">
+    Wrap seed logic in try-catch and provide clear error messages
+    
+    ```typescript
+    seed().catch((err) => {
+      console.error('❌ Error:', err);
+      process.exit(1);
+    });
+    ```
+  </Step>
+  
+  <Step title="Log Progress">
+    Provide clear console output about what's being seeded
+    
+    ```typescript
+    console.log(`✅ Admin creado: ${username}`);
+    console.log('ℹ️ Admin ya existe - omitido');
+    ```
+  </Step>
+  
+  <Step title="Clean Up Connections">
+    Always close database connections when done
+    
+    ```typescript
+    await ds.destroy();
+    ```
+  </Step>
+</Steps>
+
+## When to Use Each Seeding Method
+
+### Standalone Script (`npm run seed:admin`)
+
+**Use when:**
+- Setting up a fresh database
+- Deploying to a new environment
+- Manually creating initial data
+- Running seeds independently of the application
+
+**Advantages:**
+- Runs quickly without starting the full app
+- Can be run as part of deployment scripts
+- Easy to debug
+
+### Application Bootstrap (`SeederService`)
+
+**Use when:**
+- You want automatic seeding on every startup
+- Deploying containerized applications
+- Ensuring critical data always exists
+
+**Advantages:**
+- No manual intervention required
+- Guaranteed to run before app starts
+- Works well with Docker/Kubernetes
+
+## Seeding in Different Environments
+
+### Development
+
+```bash
+# .env.development
+DB_NAME=ssp_db_dev
+SEED_ADMIN_PASSWORD=DevAdmin123
+```
+
+```bash
+npm run seed:admin
+```
+
+### Staging
+
+```bash
+# .env.staging
+DB_NAME=ssp_db_staging
+SEED_ADMIN_PASSWORD=StagingAdmin456
+```
+
+### Production
+
+```bash
+# .env.production
+DB_NAME=ssp_db_prod
+SEED_ADMIN_PASSWORD=VerySecureProductionPassword789!
+```
+
+<Warning>
+  **Production Seeding**: In production, seed scripts should only create essential data. Avoid seeding test data or default passwords.
+</Warning>
+
+## Troubleshooting
+
+<Accordion title="Seed script can't connect to database">
+  Ensure your `.env` file is properly configured:
+  
+  ```bash
+  DB_HOST=localhost
+  DB_PORT=5432
+  DB_USERNAME=ssp_user
+  DB_PASSWORD=your_password
+  DB_NAME=ssp_db
+  ```
+  
+  Test the connection:
+  
+  ```bash
+  psql -U ssp_user -d ssp_db -h localhost
+  ```
+</Accordion>
+
+<Accordion title="Admin user already exists error">
+  This is expected behavior if the admin already exists. The script is idempotent and will skip creation:
+  
+  ```
+  ✅ Admin ya existe: Admin
+  ```
+  
+  If you need to reset the admin password, manually update it in the database or delete the user first.
+</Accordion>
+
+<Accordion title="bcrypt errors">
+  If you encounter bcrypt errors:
+  
+  ```bash
+  # Rebuild bcrypt for your platform
+  npm rebuild bcrypt
+  
+  # Or reinstall
+  npm uninstall bcrypt
+  npm install bcrypt
+  ```
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Learn about database schema and entities
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure seeding passwords and database connection
+  </Card>
+  
+  <Card title="User Roles" icon="users" href="/auth/roles">
+    Understand user roles and permissions
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/development/deployment">
+    Run seeds as part of deployment process
+  </Card>
+</CardGroup>

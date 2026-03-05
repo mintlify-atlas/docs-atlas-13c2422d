@@ -1,0 +1,113 @@
+---
+title: "Create Actividad"
+description: "Create a new activity"
+---
+
+Creates a new activity in the system.
+
+## Endpoint
+
+```bash
+POST /actividades
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Request Body
+
+<ParamField path="nombre" type="string" required>
+  Name of the activity (must be unique)
+</ParamField>
+
+<ParamField path="descripcion" type="string">
+  Description of the activity
+</ParamField>
+
+<ParamField path="objetivo" type="string">
+  Objective or goal of the activity
+</ParamField>
+
+<ParamField path="categoria" type="string">
+  Activity category. Must be one of:
+  - `TRABAJO_COMUNITARIO` - Community work
+  - `LIDERAZGO_COMUNITARIO` - Community leadership
+  - `ATENCION_SUSTANCIAS` - Substance abuse treatment
+  - `EDUCACION_PARA_LA_VIDA` - Life education
+  - `PROMOCION_CULTURAL_DEPORTIVA` - Cultural and sports promotion
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="number">
+  Unique identifier for the activity
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Name of the activity
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Description of the activity
+</ResponseField>
+
+<ResponseField name="objetivo" type="string">
+  Objective of the activity
+</ResponseField>
+
+<ResponseField name="categoria" type="string">
+  Activity category
+</ResponseField>
+
+<ResponseField name="activo" type="boolean">
+  Whether the activity is active (default: true)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:3000/actividades \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Limpieza de parques públicos",
+    "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+    "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+    "categoria": "TRABAJO_COMUNITARIO"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "nombre": "Limpieza de parques públicos",
+  "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+  "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+  "categoria": "TRABAJO_COMUNITARIO",
+  "activo": true
+}
+```
+
+## Validation Errors
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "El nombre de la actividad es obligatorio",
+    "Categoría inválida"
+  ],
+  "error": "Bad Request"
+}
+```
+
+<Note>
+  The activity name must be unique. Attempting to create an activity with a duplicate name will result in an error.
+</Note>

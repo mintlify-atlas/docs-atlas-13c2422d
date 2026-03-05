@@ -1,0 +1,146 @@
+---
+title: "Create Salud Profile"
+description: "Create a new health profile for a beneficiario"
+---
+
+Creates a new health profile record for a beneficiario.
+
+## Endpoint
+
+```bash
+POST /salud
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Request Body
+
+<ParamField path="beneficiarioId" type="number" required>
+  ID of the beneficiario this health profile belongs to (must be unique)
+</ParamField>
+
+<ParamField path="esAptoFisico" type="boolean">
+  Whether the beneficiario is physically fit (default: true)
+</ParamField>
+
+<ParamField path="padecEnfermedad" type="boolean">
+  Whether the beneficiario has a medical condition (default: false)
+</ParamField>
+
+<ParamField path="nombreEnfermedad" type="string">
+  Name of the medical condition (if applicable)
+</ParamField>
+
+<ParamField path="consumeSustancias" type="boolean">
+  Whether the beneficiario consumes substances (default: false)
+</ParamField>
+
+<ParamField path="tipoSustancias" type="string">
+  Type of substances consumed (if applicable)
+</ParamField>
+
+<ParamField path="afiliadoServicioSalud" type="string">
+  Health service affiliation (e.g., IMSS, ISSSTE)
+</ParamField>
+
+<ParamField path="necesitaLentes" type="boolean">
+  Whether the beneficiario needs glasses (default: false)
+</ParamField>
+
+<ParamField path="observacionesMedicas" type="string">
+  Additional medical observations or notes
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="number">
+  Unique identifier for the health profile
+</ResponseField>
+
+<ResponseField name="beneficiarioId" type="number">
+  ID of the associated beneficiario
+</ResponseField>
+
+<ResponseField name="esAptoFisico" type="boolean">
+  Physical fitness status
+</ResponseField>
+
+<ResponseField name="padecEnfermedad" type="boolean">
+  Medical condition status
+</ResponseField>
+
+<ResponseField name="nombreEnfermedad" type="string">
+  Name of medical condition
+</ResponseField>
+
+<ResponseField name="consumeSustancias" type="boolean">
+  Substance consumption status
+</ResponseField>
+
+<ResponseField name="tipoSustancias" type="string">
+  Type of substances
+</ResponseField>
+
+<ResponseField name="afiliadoServicioSalud" type="string">
+  Health service affiliation
+</ResponseField>
+
+<ResponseField name="necesitaLentes" type="boolean">
+  Glasses requirement
+</ResponseField>
+
+<ResponseField name="observacionesMedicas" type="string">
+  Medical observations
+</ResponseField>
+
+<ResponseField name="fechaActualizacion" type="string">
+  Last update timestamp
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:3000/salud \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "beneficiarioId": 1,
+    "esAptoFisico": true,
+    "padecEnfermedad": false,
+    "consumeSustancias": false,
+    "afiliadoServicioSalud": "IMSS",
+    "necesitaLentes": false
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "beneficiarioId": 1,
+  "esAptoFisico": true,
+  "padecEnfermedad": false,
+  "nombreEnfermedad": null,
+  "consumeSustancias": false,
+  "tipoSustancias": null,
+  "afiliadoServicioSalud": "IMSS",
+  "necesitaLentes": false,
+  "observacionesMedicas": null,
+  "fechaActualizacion": "2026-03-05T10:30:00.000Z"
+}
+```
+
+<Note>
+  Each beneficiario can only have one health profile. The `beneficiarioId` must be unique.
+</Note>
+
+<Warning>
+  Make sure the beneficiario exists before creating a health profile for them.
+</Warning>

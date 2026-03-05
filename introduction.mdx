@@ -1,0 +1,115 @@
+---
+title: Introduction
+description: Welcome to the SSP Backend API documentation - a REST API for managing beneficiaries, activities, and health profiles in the SSP platform
+---
+
+# Introduction to SSP Backend API
+
+The **SSP Backend API** is a RESTful API service built with NestJS that provides comprehensive management capabilities for the Sistema de Servicio Penal/Social (SSP) platform. This API handles beneficiary information, activities, health profiles, and user authentication with role-based access control.
+
+## What is SSP Backend API?
+
+SSP Backend API is designed to support social and penal service programs by providing:
+
+- **Beneficiary Management**: Track and manage individuals enrolled in service programs
+- **Activity Tracking**: Organize and monitor community service activities across multiple categories
+- **Health Profiles**: Maintain comprehensive health information for each beneficiary
+- **User Authentication**: Secure JWT-based authentication with role-based permissions
+
+## Who is this for?
+
+This API is designed for:
+
+- **Developers** building client applications for SSP management systems
+- **System Administrators** deploying and maintaining the SSP platform
+- **Social Workers** and program coordinators who need to understand the system architecture
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="JWT Authentication" icon="shield-check">
+    Secure authentication with JSON Web Tokens and role-based access control for four user types: Admin, Psicologo, TrabajoSocial, and Guia
+  </Card>
+  
+  <Card title="Complete CRUD Operations" icon="database">
+    Full create, read, update, and delete operations for beneficiaries, activities, and health profiles
+  </Card>
+  
+  <Card title="PostgreSQL with TypeORM" icon="elephant">
+    Robust data persistence using PostgreSQL database with TypeORM for type-safe database operations
+  </Card>
+  
+  <Card title="Role-Based Authorization" icon="users">
+    Four distinct user roles with granular permissions: Admin, Psicologo, TrabajoSocial, and Guia
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+The SSP Backend API is built with modern, production-ready technologies:
+
+- **Framework**: [NestJS](https://nestjs.com) v11 - A progressive Node.js framework
+- **Language**: TypeScript - For type safety and better developer experience
+- **Database**: PostgreSQL - Reliable relational database
+- **ORM**: TypeORM v0.3 - Type-safe database operations
+- **Authentication**: JWT (JSON Web Tokens) with Passport.js
+- **Validation**: class-validator and class-transformer
+- **Testing**: Jest for unit and e2e testing
+
+## Core Modules
+
+The API is organized into the following modules:
+
+### Authentication Module
+Handles user login, JWT token generation, and validation. Supports secure password hashing with bcrypt.
+
+### Users Module
+Manages user accounts with four distinct roles and permissions.
+
+### Beneficiarios Module
+Complete CRUD operations for beneficiary management, including filtering by entry date and assigned time.
+
+### Actividades Module
+Manages community service activities across five categories:
+- Trabajo Comunitario (Community Work)
+- Liderazgo Comunitario (Community Leadership)
+- Atención a Sustancias (Substance Care)
+- Educación para la Vida (Life Education)
+- Promoción Cultural y Deportiva (Cultural & Sports Promotion)
+
+### Salud Module
+Maintains comprehensive health profiles including physical aptitude, illnesses, substance use, and medical observations.
+
+## Getting Started
+
+Ready to get started? Here's what to do next:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get the API running in under 5 minutes
+  </Card>
+  
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed installation and setup instructions
+  </Card>
+  
+  <Card title="Authentication" icon="key" href="/auth/overview">
+    Learn how authentication and authorization work
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore all available API endpoints
+  </Card>
+</CardGroup>
+
+## API Endpoints Overview
+
+The API provides the following endpoint groups:
+
+- **Authentication**: `/auth/login` - User login and token generation
+- **Users**: `/users` - User management (admin only)
+- **Beneficiarios**: `/beneficiarios` - Beneficiary CRUD and filtering
+- **Actividades**: `/actividades` - Activity management and categorization
+- **Salud**: `/salud` - Health profile management
+
+All endpoints require authentication except `/auth/login`. Role-based permissions control access to specific operations.

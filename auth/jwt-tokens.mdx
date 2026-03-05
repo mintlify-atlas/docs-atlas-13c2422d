@@ -1,0 +1,403 @@
+---
+title: JWT Tokens
+description: Understanding JWT token structure, expiration, and lifecycle in the SSP Backend API
+---
+
+# JWT Tokens
+
+JSON Web Tokens (JWT) are the primary authentication mechanism in the SSP Backend API. This guide explains how JWT tokens work, their structure, and how to use them effectively.
+
+## What is a JWT?
+
+A JWT is a compact, URL-safe token that contains encoded JSON data. It consists of three parts separated by dots:
+
+```
+header.payload.signature
+```
+
+Example JWT from the SSP API:
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbCI6IkFkbWluIiwibm9tVXN1YXJpbyI6IkFkbWluIiwiaWF0IjoxNzA5NjQwMDAwLCJleHAiOjE3MDk3MjY0MDB9.signature_hash_here
+```
+
+## Token Structure
+
+### Header
+
+Contains metadata about the token:
+
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+```
+
+- **alg**: Algorithm used for signing (HMAC SHA256)
+- **typ**: Token type (JWT)
+
+### Payload
+
+Contains the claims (user data):
+
+```json
+{
+  "sub": 1,
+  "rol": "Admin",
+  "nomUsuario": "Admin",
+  "iat": 1709640000,
+  "exp": 1709726400
+}
+```
+
+**Claims in SSP API:**
+
+- **sub** (Subject): User ID - the unique identifier for the user
+- **rol** (Role): User role - one of `Admin`, `Psicologo`, `TrabajoSocial`, or `Guia`
+- **nomUsuario**: Username used for login
+- **iat** (Issued At): Timestamp when the token was created
+- **exp** (Expiration): Timestamp when the token expires
+
+### Signature
+
+The signature ensures the token hasn't been tampered with. It's created by:
+
+```javascript
+HMACSHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  JWT_SECRET
+)
+```
+
+The `JWT_SECRET` from your environment variables is used to sign and verify tokens.
+
+## Token Generation
+
+Tokens are generated during the login process. Here's how it works in `src/shared/auth/auth.service.ts:25`:
+
+```typescript
+// Payload que viaja dentro del token JWT
+const payload = {
+  sub:        user.id,
+  rol:        user.rol,          // ej: "Admin", "Guia"
+  nomUsuario: user.nomUsuario,
+};
+
+return {
+  access_token: await this.jwtService.signAsync(payload),
+  user: {
+    id:        user.id,
+    nombre:    user.nombre,
+    rol:       user.rol,
+    nomUsuario: user.nomUsuario,
+  },
+};
+```
+
+### JWT Configuration
+
+JWT settings are configured in `src/shared/auth/auth.module.ts:16`:
+
+```typescript
+JwtModule.registerAsync({
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) => {
+    const secret =
+      config.get<string>('JWT_SECRET') ?? 'dev_secret_change_me';
+    const expiresIn = (config.get<string>('JWT_EXPIRES_IN') ??
+      '1d') as StringValue;
+
+    return {
+      secret,
+      signOptions: { expiresIn },
+    };
+  },
+}),
+```
+
+## Token Expiration
+
+### Default Expiration
+
+By default, tokens expire after **1 day** (24 hours). This is controlled by the `JWT_EXPIRES_IN` environment variable.
+
+### Configuring Expiration
+
+You can customize the expiration time in your `.env` file:
+
+```bash
+# Examples of different expiration times
+JWT_EXPIRES_IN=1h   # 1 hour
+JWT_EXPIRES_IN=12h  # 12 hours
+JWT_EXPIRES_IN=1d   # 1 day (default)
+JWT_EXPIRES_IN=7d   # 7 days
+JWT_EXPIRES_IN=30d  # 30 days
+```
+
+<Warning>
+  **Security Consideration**: Shorter expiration times are more secure but require users to login more frequently. Balance security with user experience based on your application's needs.
+</Warning>
+
+### When Tokens Expire
+
+When a token expires:
+
+1. The API rejects the request with a 401 Unauthorized error
+2. The client must request a new token by logging in again
+3. There is currently no refresh token mechanism (re-login required)
+
+**Expired Token Response:**
+
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+## Using JWT Tokens
+
+### Making Authenticated Requests
+
+Include the JWT token in the `Authorization` header with the `Bearer` scheme:
+
+```bash
+curl -X GET http://localhost:3000/users \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### In Different HTTP Clients
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET http://localhost:3000/users \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+```javascript JavaScript (Fetch)
+fetch('http://localhost:3000/users', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+```typescript TypeScript (Axios)
+import axios from 'axios';
+
+const response = await axios.get('http://localhost:3000/users', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+console.log(response.data);
+```
+
+```python Python (Requests)
+import requests
+
+headers = {
+    'Authorization': f'Bearer {access_token}'
+}
+
+response = requests.get('http://localhost:3000/users', headers=headers)
+print(response.json())
+```
+
+</CodeGroup>
+
+## Token Validation
+
+The `JwtStrategy` automatically validates tokens on protected routes (from `src/shared/auth/jwt.strategy.ts:8`):
+
+```typescript
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(config: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: config.get<string>('JWT_SECRET') ?? 'dev_secret_change_me',
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(payload: any) {
+    // lo que regresa aquí se asigna a req.user
+    return {
+      userId: payload.sub,
+      rol: payload.rol,
+      nom_usuario: payload.nom_usuario,
+    };
+  }
+}
+```
+
+### Validation Process
+
+<Steps>
+  <Step title="Extract Token">
+    The token is extracted from the `Authorization` header using `ExtractJwt.fromAuthHeaderAsBearerToken()`
+  </Step>
+  
+  <Step title="Verify Signature">
+    The token signature is verified using the `JWT_SECRET` to ensure it hasn't been tampered with
+  </Step>
+  
+  <Step title="Check Expiration">
+    The token's expiration time (`exp` claim) is checked. If expired, the request is rejected.
+  </Step>
+  
+  <Step title="Attach User Data">
+    If valid, the payload is decoded and attached to `request.user` for use in route handlers
+  </Step>
+</Steps>
+
+## Token Lifecycle
+
+```mermaid
+flowchart LR
+    A[User Login] --> B[Generate JWT]
+    B --> C[Token Issued]
+    C --> D{Token Valid?}
+    D -->|Yes| E[Access Granted]
+    D -->|No| F[401 Unauthorized]
+    E --> G{Token Expired?}
+    G -->|No| E
+    G -->|Yes| F
+    F --> A
+```
+
+## Security Considerations
+
+### JWT Secret
+
+The `JWT_SECRET` is critical for security:
+
+<Warning>
+  **Best Practices:**
+  - Use a minimum of 32 random characters
+  - Never commit secrets to version control
+  - Use different secrets for development, staging, and production
+  - Rotate secrets periodically (requires re-authentication of all users)
+</Warning>
+
+Generate a secure secret:
+
+```bash
+# Using OpenSSL
+openssl rand -base64 32
+
+# Using Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### Token Storage (Client-Side)
+
+<CardGroup cols={2}>
+  <Card title="Recommended: Memory" icon="brain">
+    Store tokens in application memory for maximum security (lost on page refresh)
+  </Card>
+  
+  <Card title="SessionStorage" icon="window">
+    Cleared when tab closes, safer than localStorage
+  </Card>
+  
+  <Card title="LocalStorage" icon="hard-drive">
+    Persistent but vulnerable to XSS attacks - use with caution
+  </Card>
+  
+  <Card title="HTTP-Only Cookies" icon="cookie">
+    Most secure option but requires server-side implementation changes
+  </Card>
+</CardGroup>
+
+### Common Vulnerabilities
+
+<Accordion title="Token Theft (Man-in-the-Middle)">
+  **Mitigation**: Always use HTTPS in production to encrypt tokens in transit.
+  
+  ```nginx
+  # Force HTTPS in nginx
+  server {
+    listen 80;
+    return 301 https://$host$request_uri;
+  }
+  ```
+</Accordion>
+
+<Accordion title="XSS (Cross-Site Scripting)">
+  **Mitigation**: 
+  - Sanitize all user inputs
+  - Use Content Security Policy (CSP) headers
+  - Avoid storing tokens in localStorage if possible
+  - Use HTTP-only cookies for token storage
+</Accordion>
+
+<Accordion title="Token Replay Attacks">
+  **Mitigation**:
+  - Use short expiration times
+  - Implement token refresh mechanisms
+  - Consider adding IP address or user agent to token claims
+  - Log and monitor for suspicious token usage patterns
+</Accordion>
+
+## Debugging Tokens
+
+### Decode JWT Tokens
+
+You can decode (but not verify) tokens at [jwt.io](https://jwt.io) to inspect their contents.
+
+<Info>
+  **Note**: jwt.io is safe for decoding tokens during development, but never paste production tokens into third-party tools. Use local tools instead.
+</Info>
+
+### Local Decoding
+
+Decode tokens locally using Node.js:
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+const token = 'your.jwt.token.here';
+
+// Decode without verification (for debugging)
+const decoded = jwt.decode(token);
+console.log(decoded);
+
+// Verify and decode (requires secret)
+const verified = jwt.verify(token, 'your_jwt_secret');
+console.log(verified);
+```
+
+## Future Enhancements
+
+The current implementation could be enhanced with:
+
+- **Refresh Tokens**: Long-lived tokens for obtaining new access tokens without re-login
+- **Token Revocation**: Blacklist mechanism for invalidating tokens before expiration
+- **Multiple Token Types**: Separate tokens for different scopes (admin actions, API access, etc.)
+- **Token Rotation**: Automatic token refresh on activity
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="User Roles" icon="users" href="/auth/roles">
+    Learn about role-based access control and permissions
+  </Card>
+  
+  <Card title="Authentication Overview" icon="shield" href="/auth/overview">
+    Understanding the complete authentication flow
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure JWT settings and secrets
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/auth/login">
+    Complete login endpoint documentation
+  </Card>
+</CardGroup>

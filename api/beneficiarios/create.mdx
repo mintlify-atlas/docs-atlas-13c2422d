@@ -1,0 +1,106 @@
+---
+title: "Create Beneficiario"
+description: "Create a new beneficiario record"
+---
+
+Creates a new beneficiario with the specified information.
+
+## Endpoint
+
+```bash
+POST /beneficiarios
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Request Body
+
+<ParamField path="nombre" type="string" required>
+  Full name of the beneficiario (max 150 characters)
+</ParamField>
+
+<ParamField path="tiempoAsignado" type="number" required>
+  Assigned time amount (must be greater than 0)
+</ParamField>
+
+<ParamField path="unidadTiempo" type="string" required>
+  Time unit for the assigned time. Must be one of:
+  - `HORAS` - Hours
+  - `MESES` - Months
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="number">
+  Unique identifier for the beneficiario
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Full name of the beneficiario
+</ResponseField>
+
+<ResponseField name="fechaIngreso" type="string">
+  Date of entry (auto-generated as current date)
+</ResponseField>
+
+<ResponseField name="tiempoAsignado" type="number">
+  Assigned time amount
+</ResponseField>
+
+<ResponseField name="unidadTiempo" type="string">
+  Time unit (HORAS or MESES)
+</ResponseField>
+
+<ResponseField name="creadoEn" type="string">
+  Timestamp when record was created
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:3000/beneficiarios \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juan Pérez García",
+    "tiempoAsignado": 6,
+    "unidadTiempo": "MESES"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "nombre": "Juan Pérez García",
+  "fechaIngreso": "2026-03-05",
+  "tiempoAsignado": 6,
+  "unidadTiempo": "MESES",
+  "creadoEn": "2026-03-05T10:30:00.000Z"
+}
+```
+
+## Validation Errors
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "El nombre es obligatorio",
+    "El tiempo asignado debe ser mayor a 0",
+    "La unidad de tiempo debe ser HORAS o MESES"
+  ],
+  "error": "Bad Request"
+}
+```
+
+<Note>
+  The `fechaIngreso` field is automatically set to the current date when creating a beneficiario.
+</Note>

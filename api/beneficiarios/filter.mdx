@@ -1,0 +1,90 @@
+---
+title: "Filter Beneficiarios"
+description: "Filter beneficiarios by time unit"
+---
+
+Retrieves beneficiarios filtered by their time unit (HORAS or MESES).
+
+## Endpoint
+
+```bash
+GET /beneficiarios/filtrar
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Query Parameters
+
+<ParamField query="unidad" type="string" required>
+  Time unit to filter by. Must be one of:
+  - `HORAS` - Filter beneficiarios assigned hours
+  - `MESES` - Filter beneficiarios assigned months
+</ParamField>
+
+## Response
+
+Returns an array of beneficiario objects matching the filter.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the beneficiario
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Full name of the beneficiario
+</ResponseField>
+
+<ResponseField name="fechaIngreso" type="string">
+  Date of entry
+</ResponseField>
+
+<ResponseField name="tiempoAsignado" type="number">
+  Assigned time amount
+</ResponseField>
+
+<ResponseField name="unidadTiempo" type="string">
+  Time unit (HORAS or MESES)
+</ResponseField>
+
+<ResponseField name="creadoEn" type="string">
+  Timestamp when record was created
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET "http://localhost:3000/beneficiarios/filtrar?unidad=HORAS" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 2,
+    "nombre": "María López Ruiz",
+    "fechaIngreso": "2026-03-02",
+    "tiempoAsignado": 120,
+    "unidadTiempo": "HORAS",
+    "creadoEn": "2026-03-02T11:30:00.000Z"
+  },
+  {
+    "id": 5,
+    "nombre": "Ana Martínez",
+    "fechaIngreso": "2026-03-04",
+    "tiempoAsignado": 80,
+    "unidadTiempo": "HORAS",
+    "creadoEn": "2026-03-04T14:20:00.000Z"
+  }
+]
+```
+
+<Note>
+  This endpoint is useful for separating beneficiarios based on their service type - those assigned hours vs. those assigned months.
+</Note>

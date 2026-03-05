@@ -1,97 +1,269 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "SSP Backend API Documentation"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative py-20 overflow-hidden bg-gradient-to-br from-[#de2850] via-[#e63946] to-[#de2850] dark:from-[#de2850] dark:via-[#c12240] dark:to-[#de2850]">
+  <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
+  <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+    <div className="grid lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          SSP Backend API Documentation
+        </h1>
+        <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8">
+          Complete REST API backend for managing beneficiaries, activities, and health profiles in the Sistema de Servicio Penal/Social platform. Built with NestJS, TypeORM, and PostgreSQL.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 rounded-full bg-white text-[#de2850] font-semibold hover:bg-gray-100 transition-colors no-underline"
+          >
+            Get Started
+          </a>
+          <a 
+            href="/api/overview" 
+            className="inline-flex items-center px-6 py-3 rounded-full border-2 border-white/40 bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors no-underline"
+          >
+            Explore API Reference
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+    Quick Start
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get your SSP Backend API running in minutes
+  </p>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  <Steps>
+    <Step title="Clone the repository">
+      Clone the SSP Backend repository and install dependencies.
+      
+      ```bash
+      git clone https://github.com/SSPEstadias/SSP-BACK.git
+      cd SSP-BACK
+      npm install
+      ```
+    </Step>
+    
+    <Step title="Configure environment variables">
+      Create a `.env` file with your database credentials and JWT secret.
+      
+      ```bash
+      DB_HOST=localhost
+      DB_PORT=5432
+      DB_USERNAME=your_username
+      DB_PASSWORD=your_password
+      DB_NAME=ssp_db
+      JWT_SECRET=your_jwt_secret_key
+      PORT=3000
+      ```
+      
+      <Note>See the [Environment Variables](/guides/environment-variables) guide for all available configuration options.</Note>
+    </Step>
+    
+    <Step title="Set up the database">
+      Create your PostgreSQL database and run migrations.
+      
+      ```bash
+      npm run seed:admin
+      npm run start:dev
+      ```
+      
+      <Tip>The seeding script will create an initial admin user for you to get started.</Tip>
+    </Step>
+    
+    <Step title="Authenticate and make your first request">
+      Login to get a JWT token and make your first API call.
+      
+      ```bash
+      curl -X POST http://localhost:3000/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{"nomUsuario":"admin","contrasena":"your_password"}'
+      ```
+      
+      <Accordion title="Example response">
+        ```json
+        {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "user": {
+            "id": 1,
+            "nombre": "Admin User",
+            "rol": "Admin"
+          }
+        }
+        ```
+      </Accordion>
+    </Step>
+  </Steps>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+    Explore by Topic
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Navigate through our comprehensive documentation
+  </p>
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
+  <CardGroup cols={2}>
     <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      title="Authentication"
+      icon="shield-halved"
+      href="/auth/overview"
+    >
+      Learn about JWT-based authentication and role-based access control with four user roles.
+    </Card>
+    <Card
+      title="Beneficiarios API"
+      icon="users"
+      href="/api/beneficiarios/create"
+    >
+      Manage beneficiary records including time assignments and intake dates.
+    </Card>
+    <Card
+      title="Actividades API"
+      icon="list-check"
+      href="/api/actividades/create"
+    >
+      Create and manage activities by category with activation controls.
+    </Card>
+    <Card
+      title="Salud API"
+      icon="heart-pulse"
+      href="/api/salud/create"
+    >
+      Track health profiles and physical fitness assessments for beneficiaries.
+    </Card>
+    <Card
+      title="Database Setup"
+      icon="database"
+      href="/guides/database-setup"
+    >
+      Configure PostgreSQL with TypeORM, migrations, and entity relationships.
+    </Card>
+    <Card
+      title="Development Guide"
+      icon="code"
+      href="/development/running-locally"
+    >
+      Set up your local development environment and testing workflow.
+    </Card>
+  </CardGroup>
+</div>
 
-## Create beautiful pages
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+    Key Features
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Everything you need to build on the SSP platform
+  </p>
 
-Everything you need to create world-class documentation.
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="p-6 rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#1a1d27]">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-lg bg-[#de2850]/10 dark:bg-[#de2850]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#de2850]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Role-Based Access Control</h3>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Four user roles (Admin, Psicologo, TrabajoSocial, Guia) with granular permissions using JWT guards and decorators.
+      </p>
+    </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+    <div className="p-6 rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#1a1d27]">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-lg bg-[#de2850]/10 dark:bg-[#de2850]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#de2850]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">PostgreSQL + TypeORM</h3>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Robust database layer with entity definitions, migrations, and automatic relationship management.
+      </p>
+    </div>
 
-## Need inspiration?
+    <div className="p-6 rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#1a1d27]">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-lg bg-[#de2850]/10 dark:bg-[#de2850]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#de2850]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Request Validation</h3>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Automatic request validation using class-validator and class-transformer with DTOs for type safety.
+      </p>
+    </div>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    <div className="p-6 rounded-2xl border border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#1a1d27]">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-lg bg-[#de2850]/10 dark:bg-[#de2850]/20 flex items-center justify-center">
+          <svg className="w-5 h-5 text-[#de2850]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">RESTful Design</h3>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Clean, consistent REST API endpoints following best practices with proper HTTP methods and status codes.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+    Resources
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Additional resources to help you succeed
+  </p>
+
+  <CardGroup cols={2}>
+    <Card
+      title="GitHub Repository"
+      icon="github"
+      href="https://github.com/SSPEstadias/SSP-BACK"
+    >
+      View the source code, report issues, and contribute to the project.
+    </Card>
+    <Card
+      title="API Reference"
+      icon="terminal"
+      href="/api/overview"
+    >
+      Complete reference for all API endpoints with request/response examples.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="p-8 sm:p-12 rounded-2xl border-2 border-gray-200 dark:border-[#27272a] bg-gradient-to-br from-gray-50 to-white dark:from-[#1a1d27] dark:to-[#0f1117] text-center">
+    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Ready to get started?
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8">
+      Follow our quickstart guide to set up your development environment and make your first API call in minutes.
+    </p>
+    <a 
+      href="/quickstart" 
+      className="inline-flex items-center px-6 py-3 rounded-full bg-[#de2850] text-white font-semibold hover:bg-[#c12240] transition-colors no-underline"
+    >
+      Get Started Now
+    </a>
+  </div>
+</div>
