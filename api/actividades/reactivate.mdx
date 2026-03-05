@@ -1,0 +1,93 @@
+---
+title: "Reactivate Actividad"
+description: "Reactivate a previously deactivated activity"
+---
+
+Reactivates a previously deactivated activity, making it active again in the system.
+
+## Endpoint
+
+```bash
+PATCH /actividades/:id/reactivar
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  The unique identifier of the activity to reactivate
+</ParamField>
+
+## Response
+
+Returns the updated activity object with `activo` set to `true`.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the activity
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Name of the activity
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Description of the activity
+</ResponseField>
+
+<ResponseField name="objetivo" type="string">
+  Objective of the activity
+</ResponseField>
+
+<ResponseField name="categoria" type="string">
+  Activity category
+</ResponseField>
+
+<ResponseField name="activo" type="boolean">
+  Whether the activity is active (will be true)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PATCH http://localhost:3000/actividades/1/reactivar \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "nombre": "Limpieza de parques públicos",
+  "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+  "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+  "categoria": "TRABAJO_COMUNITARIO",
+  "activo": true
+}
+```
+
+## Error Responses
+
+### Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Actividad not found"
+}
+```
+
+<Note>
+  Reactivated activities will immediately appear in the `/actividades` endpoint (which only returns active activities).
+</Note>
+
+<Info>
+  To deactivate an activity again, use the [Deactivate Actividad](/api/actividades/deactivate) endpoint.
+</Info>

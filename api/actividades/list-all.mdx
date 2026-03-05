@@ -1,0 +1,98 @@
+---
+title: "List All Actividades"
+description: "Retrieve all activities including inactive ones"
+---
+
+Retrieves a list of all activities in the system, including both active and inactive activities. This endpoint is typically restricted to Admin users.
+
+## Endpoint
+
+```bash
+GET /actividades/todas
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+<Warning>
+  This endpoint is intended for Admin users only. It returns both active and inactive activities, which may contain sensitive historical data.
+</Warning>
+
+## Response
+
+Returns an array of all activity objects, regardless of their active status.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the activity
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Name of the activity
+</ResponseField>
+
+<ResponseField name="descripcion" type="string">
+  Description of the activity
+</ResponseField>
+
+<ResponseField name="objetivo" type="string">
+  Objective of the activity
+</ResponseField>
+
+<ResponseField name="categoria" type="string">
+  Activity category
+</ResponseField>
+
+<ResponseField name="activo" type="boolean">
+  Whether the activity is currently active
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:3000/actividades/todas \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Limpieza de parques públicos",
+    "descripcion": "Actividad de limpieza y mantenimiento de áreas verdes",
+    "objetivo": "Contribuir al mejoramiento del entorno comunitario",
+    "categoria": "TRABAJO_COMUNITARIO",
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombre": "Taller de liderazgo juvenil",
+    "descripcion": "Capacitación en habilidades de liderazgo",
+    "objetivo": "Desarrollar competencias de liderazgo comunitario",
+    "categoria": "LIDERAZGO_COMUNITARIO",
+    "activo": true
+  },
+  {
+    "id": 3,
+    "nombre": "Programa de alfabetización",
+    "descripcion": "Enseñanza de lectoescritura básica",
+    "objetivo": "Reducir el analfabetismo en la comunidad",
+    "categoria": "EDUCACION",
+    "activo": false
+  }
+]
+```
+
+<Note>
+  Unlike the `/actividades` endpoint which only returns active activities, this endpoint returns all activities regardless of their status. Use this for administrative purposes or when you need to view the complete activity history.
+</Note>
+
+<Info>
+  To filter only active activities, use the [List Actividades](/api/actividades/list) endpoint instead.
+</Info>

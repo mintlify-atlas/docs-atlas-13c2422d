@@ -101,9 +101,11 @@
             "pages": [
               "api/actividades/create",
               "api/actividades/list",
+              "api/actividades/list-all",
               "api/actividades/get",
               "api/actividades/update",
               "api/actividades/deactivate",
+              "api/actividades/reactivate",
               "api/actividades/filter"
             ]
           },
@@ -113,7 +115,9 @@
               "api/salud/create",
               "api/salud/list",
               "api/salud/get",
+              "api/salud/get-by-beneficiario",
               "api/salud/update",
+              "api/salud/update-by-beneficiario",
               "api/salud/delete",
               "api/salud/filter"
             ]

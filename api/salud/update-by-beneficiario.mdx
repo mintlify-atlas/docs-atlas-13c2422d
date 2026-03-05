@@ -1,0 +1,173 @@
+---
+title: "Update Salud by Beneficiario"
+description: "Update health profile by beneficiario ID"
+---
+
+Updates the health profile associated with a specific beneficiario.
+
+## Endpoint
+
+```bash
+PATCH /salud/beneficiario/:beneficiarioId
+```
+
+## Authentication
+
+This endpoint requires a valid JWT token.
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## Path Parameters
+
+<ParamField path="beneficiarioId" type="number" required>
+  The unique identifier of the beneficiario whose health profile you want to update
+</ParamField>
+
+## Request Body
+
+You can update any combination of the following fields. All fields are optional.
+
+<ParamField body="esAptoFisico" type="boolean">
+  Physical fitness status
+</ParamField>
+
+<ParamField body="padecEnfermedad" type="boolean">
+  Whether the beneficiario has a medical condition
+</ParamField>
+
+<ParamField body="nombreEnfermedad" type="string">
+  Name of the medical condition (if padecEnfermedad is true)
+</ParamField>
+
+<ParamField body="consumeSustancias" type="boolean">
+  Whether the beneficiario consumes substances
+</ParamField>
+
+<ParamField body="tipoSustancias" type="string">
+  Type of substances consumed (if consumeSustancias is true)
+</ParamField>
+
+<ParamField body="afiliadoServicioSalud" type="string">
+  Health service affiliation (e.g., "IMSS", "ISSSTE", "Seguro Popular")
+</ParamField>
+
+<ParamField body="necesitaLentes" type="boolean">
+  Whether the beneficiario requires glasses
+</ParamField>
+
+<ParamField body="observacionesMedicas" type="string">
+  Additional medical observations or notes
+</ParamField>
+
+## Response
+
+Returns the updated health profile object.
+
+<ResponseField name="id" type="number">
+  Unique identifier for the health profile
+</ResponseField>
+
+<ResponseField name="beneficiarioId" type="number">
+  ID of the associated beneficiario
+</ResponseField>
+
+<ResponseField name="esAptoFisico" type="boolean">
+  Physical fitness status
+</ResponseField>
+
+<ResponseField name="padecEnfermedad" type="boolean">
+  Medical condition status
+</ResponseField>
+
+<ResponseField name="nombreEnfermedad" type="string">
+  Name of medical condition
+</ResponseField>
+
+<ResponseField name="consumeSustancias" type="boolean">
+  Substance consumption status
+</ResponseField>
+
+<ResponseField name="tipoSustancias" type="string">
+  Type of substances
+</ResponseField>
+
+<ResponseField name="afiliadoServicioSalud" type="string">
+  Health service affiliation
+</ResponseField>
+
+<ResponseField name="necesitaLentes" type="boolean">
+  Glasses requirement
+</ResponseField>
+
+<ResponseField name="observacionesMedicas" type="string">
+  Medical observations
+</ResponseField>
+
+<ResponseField name="fechaActualizacion" type="string">
+  Last update timestamp
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PATCH http://localhost:3000/salud/beneficiario/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "esAptoFisico": false,
+    "padecEnfermedad": true,
+    "nombreEnfermedad": "Diabetes tipo 2",
+    "observacionesMedicas": "Requiere seguimiento médico mensual"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "beneficiarioId": 1,
+  "esAptoFisico": false,
+  "padecEnfermedad": true,
+  "nombreEnfermedad": "Diabetes tipo 2",
+  "consumeSustancias": false,
+  "tipoSustancias": null,
+  "afiliadoServicioSalud": "IMSS",
+  "necesitaLentes": false,
+  "observacionesMedicas": "Requiere seguimiento médico mensual",
+  "fechaActualizacion": "2026-03-05T14:45:00.000Z"
+}
+```
+
+## Error Responses
+
+### Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Health profile not found for this beneficiario"
+}
+```
+
+### Validation Error
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "esAptoFisico must be a boolean value"
+  ],
+  "error": "Bad Request"
+}
+```
+
+<Note>
+  This endpoint is useful when you know the beneficiario ID and want to update their health information directly without first retrieving the health profile ID.
+</Note>
+
+<Info>
+  To retrieve the health profile for a specific beneficiario, use the [Get Salud by Beneficiario](/api/salud/get-by-beneficiario) endpoint.
+</Info>
