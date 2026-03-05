@@ -1,0 +1,143 @@
+{
+  "projectType": "api-service",
+  "projectName": "SSP Backend API",
+  "projectDescription": "REST API backend for managing beneficiaries, activities, health profiles, and user roles in the SSP (Sistema de Servicio Penal/Social) platform",
+  "theme": "mint",
+  "primaryColor": "#de2850",
+  "lightColor": "#e08cac",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "auth/overview",
+              "auth/jwt-tokens",
+              "auth/roles"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/database-setup",
+              "guides/seeding",
+              "guides/environment-variables"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/running-locally",
+              "development/testing",
+              "development/deployment"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/errors"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/login"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "api/users/create",
+              "api/users/list"
+            ]
+          },
+          {
+            "group": "Beneficiarios",
+            "pages": [
+              "api/beneficiarios/create",
+              "api/beneficiarios/list",
+              "api/beneficiarios/get",
+              "api/beneficiarios/update",
+              "api/beneficiarios/delete",
+              "api/beneficiarios/filter"
+            ]
+          },
+          {
+            "group": "Actividades",
+            "pages": [
+              "api/actividades/create",
+              "api/actividades/list",
+              "api/actividades/get",
+              "api/actividades/update",
+              "api/actividades/deactivate",
+              "api/actividades/filter"
+            ]
+          },
+          {
+            "group": "Salud",
+            "pages": [
+              "api/salud/create",
+              "api/salud/list",
+              "api/salud/get",
+              "api/salud/update",
+              "api/salud/delete",
+              "api/salud/filter"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JWT-based authentication with role-based access control",
+    "Complete CRUD operations for beneficiaries, activities, and health profiles",
+    "PostgreSQL database with TypeORM",
+    "Role-based authorization (Admin, Psicologo, TrabajoSocial, Guia)",
+    "Seeding functionality for initial data",
+    "RESTful API design with validation"
+  ],
+  "publicApiSurface": [
+    "POST /auth/login",
+    "POST /users",
+    "GET /users",
+    "POST /beneficiarios",
+    "GET /beneficiarios",
+    "GET /beneficiarios/:id",
+    "PATCH /beneficiarios/:id",
+    "DELETE /beneficiarios/:id",
+    "GET /beneficiarios/filtrar",
+    "POST /actividades",
+    "GET /actividades",
+    "GET /actividades/todas",
+    "GET /actividades/:id",
+    "PATCH /actividades/:id",
+    "PATCH /actividades/:id/desactivar",
+    "PATCH /actividades/:id/reactivar",
+    "GET /actividades/categoria",
+    "POST /salud",
+    "GET /salud",
+    "GET /salud/:id",
+    "PATCH /salud/:id",
+    "DELETE /salud/:id",
+    "GET /salud/aptitud",
+    "GET /salud/beneficiario/:beneficiarioId",
+    "PATCH /salud/beneficiario/:beneficiarioId"
+  ]
+}
